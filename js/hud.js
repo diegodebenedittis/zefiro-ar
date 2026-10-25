@@ -27,9 +27,9 @@ export function etichetta(testo, pos, angGradi = 0.7) {
 
 // Pannello HUD agganciato alla camera
 export function creaHud(camera) {
-  const c = document.createElement('canvas'); c.width = 1024; c.height = 256;
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 320;
   const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.2),
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.25),
     new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false }));
   m.position.set(0, -0.32, -1.2); m.renderOrder = 20;
   camera.add(m);
@@ -47,9 +47,10 @@ export function creaHud(camera) {
     imposta(righe) {
       const k = righe.join('|'); if (k === ultimo) return; ultimo = k;
       const g = c.getContext('2d'); g.clearRect(0, 0, c.width, c.height);
-      g.drawImage(canvasTesto(righe, { larg: 1024, alt: 256, font: 46, colore: '#ffffff' }), 0, 0);
+      g.drawImage(canvasTesto(righe.filter(Boolean), { larg: 1024, alt: 320, font: 40, colore: '#ffffff' }), 0, 0);
       tex.needsUpdate = true;
     },
-    set visibile(v) { m.visible = v; }
+    set visibile(v) { m.visible = v; },
+    posizione(x, y, z) { m.position.set(x, y, z); }
   };
 }

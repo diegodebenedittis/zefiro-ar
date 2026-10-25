@@ -15,6 +15,7 @@ const MOBILE = !QUEST && (matchMedia('(pointer: coarse)').matches || /Android|iP
 
 let prog = null, mondoAttivo = null, inizializzato = false, etichetteOn = true, fantasmiOn = false;
 let modoTouch = false;                       // HUD e comandi a schermo (telefono)
+let tracciato = false, diag = '';            // stato del tracciamento e riga diagnostica
 const stato = { theta: 0, iB: 0 };
 const hud = creaHud(camera);
 
@@ -99,6 +100,7 @@ $('guidaTelefono').hidden = !MOBILE;
 
 // ---------- avvio sessione
 async function avviaAR() {
+  if (!QUEST) impostaModoTouch(true);        // la radice del DOM overlay deve essere visibile
   const sess = await navigator.xr.requestSession('immersive-ar', {
     optionalFeatures: ['local-floor', 'dom-overlay'],
     domOverlay: { root: $('touch') }
@@ -110,7 +112,14 @@ async function avviaAR() {
   mondo.position.y = tipo === 'local' ? -H_OCCHIO : 0;
   await renderer.xr.setSession(sess);
   renderer.xr.getReferenceSpace()?.addEventListener('reset', () => inizializzato = false);
-  impostaModoTouch(!!sess.domOverlayState);
+  const overlay = !!sess.domOverlayState;
+  impostaModoTouch(overlay);
+  if (!overlay && !QUEST) {                  // telefono senza overlay: HUD 3D più lontano, tocco = Allinea
+    hud.posizione(0, -0.25, -2.4);
+    sess.addEventListener('select', () => azioni.allinea());
+  }
+  const n = mondoAttivo.bersagli.filter(b => b.tipo === 't').length;
+  diag = `rif. ${tipo} · overlay ${overlay ? 'sì' : 'no'} · ${n} turbine`;
   sess.addEventListener('end', () => {
     impostaModoTouch(false);
     $('pannello').style.display = '';
@@ -121,14 +130,14 @@ $('entra').addEventListener('click', async () => {
   const { punto, turbine } = selezione();
   mondoAttivo = popolaMondo(mondo, punto, turbine);
   mondoAttivo.punto = punto; mondoAttivo.azIniziale = punto.baricentro?.az ?? turbine[0]?.az ?? 0;
-  stato.iB = 0; inizializzato = false; fantasmiOn = false; etichetteOn = true;
+  stato.iB = 0; inizializzato = false; tracciato = false; fantasmiOn = false; etichetteOn = true;
   $('tEtichette').classList.add('on'); $('tFantasmi').classList.remove('on');
 
   try {
     if (supportato) {
       await avviaAR();
     } else {
-      mondo.position.y = 0;
+      mondo.position.y = 0; tracciato = true; diag = 'anteprima senza AR';
       renderer.domElement.style.display = 'block';
       impostaModoTouch(MOBILE);
       addEventListener('keydown', e => { if (e.key === 'Escape') location.reload(); });
@@ -140,19 +149,36 @@ $('entra').addEventListener('click', async () => {
 });
 
 // ---------- ciclo
-let tPrec = 0;
-renderer.setAnimationLoop(t => {
+function guida(b) {
+  if (!tracciato) return 'Muovi lentamente il telefono per avviare il tracciamento…';
+  if (!b) return '';
+  const d = ctrl.scarto(b.az);                       // >0: il bersaglio è a sinistra
+  if (Math.abs(d) < 15) return 'Allinea il bersaglio reale al mirino e premi Allinea';
+  return d > 0 ? `◀  gira a sinistra di ${d.toFixed(0)}°` : `gira a destra di ${(-d).toFixed(0)}°  ▶`;
+}
+
+let tPrec = 0, tAttesa = 0;
+renderer.setAnimationLoop((t, frame) => {
   const dt = Math.min(0.1, (t - tPrec) / 1000 || 0); tPrec = t;
+  if (frame && !tracciato) {
+    const pose = frame.getViewerPose(renderer.xr.getReferenceSpace());
+    tAttesa = pose ? tAttesa + dt : 0;
+    // posa a 6 gradi di libertà, oppure posa (anche solo orientamento) stabile da 3 s
+    tracciato = !!pose && (!pose.emulatedPosition || tAttesa > 3);
+  }
   if (mondoAttivo) {
-    if (!inizializzato) { ctrl.allineaAz(mondoAttivo.azIniziale); inizializzato = true; }
+    // allineamento iniziale al baricentro solo con una posa valida
+    if (!inizializzato && tracciato) { ctrl.allineaAz(mondoAttivo.azIniziale); inizializzato = true; }
     ctrl.aggiorna(dt);
     mondo.rotation.y = stato.theta;
     for (const r of mondoAttivo.rotori) r.rotation.z -= dt * 2 * Math.PI * 10 / 60;   // 10 giri/min
     const b = mondoAttivo.bersagli[stato.iB];
     const righe = [
+      guida(b),
       `${mondoAttivo.punto.id}  ·  vista ${ctrl.azTesta().toFixed(1)}°N  ·  rot. ${deg(stato.theta).toFixed(1)}°`,
       b ? `Bersaglio: ${b.nome} (${b.az.toFixed(1)}°)  Δ ${ctrl.scarto(b.az).toFixed(2)}°` : 'nessun bersaglio',
-      fantasmiOn ? 'parti nascoste: visibili' : ''
+      fantasmiOn ? 'parti nascoste: visibili' : '',
+      diag
     ];
     if (modoTouch) touch.testo(righe); else hud.imposta(righe);
   }

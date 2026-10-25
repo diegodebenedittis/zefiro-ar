@@ -20,14 +20,17 @@ export function creaTouch(root, azioni) {
   // i tocchi sui pulsanti non devono diventare "select" della sessione XR
   root.addEventListener('beforexrselect', e => e.preventDefault());
 
-  const hud = q('#tHud');
+  const hud = q('#tHud'), gd = q('#tGuida');
   let ultimo = '';
   return {
     get dir() { return dir; },
     get fine() { return fine; },
-    testo(righe) {
-      const t = righe.filter(Boolean).join('\n');
-      if (t !== ultimo) { hud.textContent = t; ultimo = t; }
+    testo([guida, ...righe]) {
+      const t = (guida || '') + '\u0000' + righe.filter(Boolean).join('\n');
+      if (t === ultimo) return;
+      ultimo = t;
+      gd.textContent = guida || ''; gd.hidden = !guida;
+      hud.textContent = righe.filter(Boolean).join('\n');
     },
     mostra(v) { root.hidden = !v; if (!v) dir = 0; }
   };
