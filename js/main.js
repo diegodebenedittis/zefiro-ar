@@ -18,8 +18,8 @@ const MOBILE = !QUEST && (matchMedia('(pointer: coarse)').matches || /Android|iP
 
 let prog = null, mondoAttivo = null, inizializzato = false, etichetteOn = true, fantasmiOn = false;
 let modoTouch = false;                       // HUD e comandi a schermo (telefono)
-let tracciato = false, diag = '';
-let avviso = null;                           // messaggio temporaneo nella fascia gialla            // stato del tracciamento e riga diagnostica
+let tracciato = false, diag = '';            // stato del tracciamento e riga diagnostica
+let avviso = null;                           // messaggio temporaneo nella fascia gialla
 const stato = { theta: 0, iB: 0, sensori: false };   // sensori: modalità fotocamera
 const hud = creaHud(camera);
 
