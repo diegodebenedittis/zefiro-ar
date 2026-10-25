@@ -34,13 +34,14 @@ export function creaHud(camera) {
   m.position.set(0, -0.32, -1.2); m.renderOrder = 20;
   camera.add(m);
 
-  const mir = new THREE.Mesh(new THREE.RingGeometry(0.006, 0.009, 32),
+  const mir = new THREE.Mesh(new THREE.RingGeometry(0.008, 0.013, 32),
     new THREE.MeshBasicMaterial({ color: 0xff3030, depthTest: false }));
   mir.position.set(0, 0, -1); mir.renderOrder = 21;
-  const croce = new THREE.Mesh(new THREE.PlaneGeometry(0.0015, 0.03),
-    new THREE.MeshBasicMaterial({ color: 0xff3030, depthTest: false }));
-  croce.position.set(0, 0, -1); croce.renderOrder = 21;
-  camera.add(mir, croce);
+  const matC = new THREE.MeshBasicMaterial({ color: 0xff3030, depthTest: false });
+  const croce = new THREE.Mesh(new THREE.PlaneGeometry(0.003, 0.05), matC);
+  const croceH = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.003), matC);
+  for (const o of [croce, croceH]) { o.position.set(0, 0, -1); o.renderOrder = 21; }
+  camera.add(mir, croce, croceH);
 
   let ultimo = '';
   return {

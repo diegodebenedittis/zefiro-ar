@@ -4,7 +4,7 @@ import { distanzaScena, dirDaAz, rad, H_OCCHIO } from './geo.js';
 import { creaTurbina } from './turbina.js';
 import { etichetta } from './hud.js';
 
-const R_SKY = 600;   // raggio della skyline e dei marker (solo direzione)
+const R_SKY = 470;   // raggio della skyline e dei marker (solo direzione)
 
 export function creaScena(contenitore) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -16,7 +16,7 @@ export function creaScena(contenitore) {
   contenitore.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.2, 20000);
+  const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 1000);
   camera.position.y = H_OCCHIO;
   scene.add(camera);
   scene.add(new THREE.HemisphereLight(0xffffff, 0x7a8590, 1.3));
@@ -64,7 +64,7 @@ function svuota(g) {
 
 export function popolaMondo(mondo, punto, turbine) {
   svuota(mondo);
-  const rotori = [], fantasmi = [], etichette = [], bersagli = [];
+  const rotori = [], fantasmi = [], etichette = [], bersagli = [], piani = [];
 
   for (const t of turbine) {
     const dS = distanzaScena(t.dist), s = dS / t.dist;
@@ -72,10 +72,12 @@ export function popolaMondo(mondo, punto, turbine) {
     const yBase = H_OCCHIO + s * t.dz;
     const yTaglio = yBase + s * Math.max(0, t.h - t.hVis);   // sotto: nascosto dal terreno
 
+    const pSopra = piano(1, -yTaglio), pSotto = piano(-1, yTaglio);
+    piani.push({ p: pSopra, y: yTaglio, s: 1 }, { p: pSotto, y: yTaglio, s: -1 });
     const matPieno = new THREE.MeshStandardMaterial({ color: 0xf4f4f4, roughness: 0.55,
-      clippingPlanes: [piano(1, -yTaglio)] });
+      clippingPlanes: [pSopra] });
     const matFant = new THREE.MeshBasicMaterial({ color: 0x55c8ff, transparent: true, opacity: 0.3,
-      depthWrite: false, clippingPlanes: [piano(-1, yTaglio)] });
+      depthWrite: false, clippingPlanes: [pSotto] });
 
     for (const [mat, lista] of [[matPieno, null], [matFant, fantasmi]]) {
       if (lista && t.hVis >= t.h) continue;
@@ -113,5 +115,13 @@ export function popolaMondo(mondo, punto, turbine) {
     const e = etichetta(r.nome, puntoSky(r.az, el + 0.2), 0.6); mondo.add(e); etichette.push(e);
     bersagli.unshift({ nome: r.nome, az: r.az, tipo: 'r' });
   }
-  return { rotori, fantasmi, etichette, bersagli };
+  return { rotori, fantasmi, etichette, bersagli, piani };
+}
+
+// La scena segue la testa: l'occhio del mondo (0, H_OCCHIO, 0) coincide con la camera.
+// I piani di taglio sono in coordinate mondo: si aggiornano con lo spostamento verticale.
+export function seguiTesta(mondo, camera, piani) {
+  const c = camera.position;
+  mondo.position.set(c.x, c.y - H_OCCHIO, c.z);
+  for (const q of piani) q.p.constant = -q.s * (q.y + mondo.position.y);
 }

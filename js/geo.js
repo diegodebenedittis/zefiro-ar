@@ -20,10 +20,11 @@ export function azDist(lon0, lat0, lon, lat) {
 // Abbassamento apparente per curvatura terrestre + rifrazione
 export const abbassamento = d => d * d * (1 - K_RIFR) / (2 * R_TERRA);
 
-// Compressione monotona delle distanze in scena: l'oggetto viene scalato
-// attorno all'occhio (dimensione angolare invariata) per non perdere precisione di depth.
-const D_LIN = 800, C = 250;
-export const distanzaScena = d => d <= D_LIN ? d : D_LIN + C * Math.log(1 + (d - D_LIN) / C);
+// Compressione monotona delle distanze in scena (max ~450 m): l'oggetto viene scalato
+// attorno all'occhio (dimensione angolare invariata). La scena segue la testa, quindi
+// la compressione non introduce parallasse; i telefoni non disegnano oltre pochi km.
+const D_LIN = 150, D_EXTRA = 300, K_COMP = 3000;
+export const distanzaScena = d => d <= D_LIN ? d : D_LIN + D_EXTRA * (1 - Math.exp(-(d - D_LIN) / K_COMP));
 
 // Direzione locale three.js (x = Est, y = su, -z = Nord) di un azimut geografico
 export const dirDaAz = az => [Math.sin(rad(az)), 0, -Math.cos(rad(az))];

@@ -1,10 +1,10 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
 import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js';
-import { creaScena, popolaMondo } from './scena.js';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js';
 import { creaControlli } from './controlli.js';
 import { creaHud } from './hud.js';
 import { creaTouch } from './touch.js';
-import { deg, H_OCCHIO } from './geo.js';
+import { deg } from './geo.js';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -109,7 +109,6 @@ async function avviaAR() {
   let tipo = 'local-floor';
   try { await sess.requestReferenceSpace('local-floor'); } catch { tipo = 'local'; }
   renderer.xr.setReferenceSpaceType(tipo);
-  mondo.position.y = tipo === 'local' ? -H_OCCHIO : 0;
   await renderer.xr.setSession(sess);
   renderer.xr.getReferenceSpace()?.addEventListener('reset', () => inizializzato = false);
   const overlay = !!sess.domOverlayState;
@@ -137,7 +136,7 @@ $('entra').addEventListener('click', async () => {
     if (supportato) {
       await avviaAR();
     } else {
-      mondo.position.y = 0; tracciato = true; diag = 'anteprima senza AR';
+      tracciato = true; diag = 'anteprima senza AR';
       renderer.domElement.style.display = 'block';
       impostaModoTouch(MOBILE);
       addEventListener('keydown', e => { if (e.key === 'Escape') location.reload(); });
@@ -171,6 +170,7 @@ renderer.setAnimationLoop((t, frame) => {
     if (!inizializzato && tracciato) { ctrl.allineaAz(mondoAttivo.azIniziale); inizializzato = true; }
     ctrl.aggiorna(dt);
     mondo.rotation.y = stato.theta;
+    seguiTesta(mondo, camera, mondoAttivo.piani);
     for (const r of mondoAttivo.rotori) r.rotation.z -= dt * 2 * Math.PI * 10 / 60;   // 10 giri/min
     const b = mondoAttivo.bersagli[stato.iB];
     const righe = [
@@ -178,7 +178,7 @@ renderer.setAnimationLoop((t, frame) => {
       `${mondoAttivo.punto.id}  ·  vista ${ctrl.azTesta().toFixed(1)}°N  ·  rot. ${deg(stato.theta).toFixed(1)}°`,
       b ? `Bersaglio: ${b.nome} (${b.az.toFixed(1)}°)  Δ ${ctrl.scarto(b.az).toFixed(2)}°` : 'nessun bersaglio',
       fantasmiOn ? 'parti nascoste: visibili' : '',
-      diag
+      `${diag} · disegnati ${renderer.info.render.calls}`
     ];
     if (modoTouch) touch.testo(righe); else hud.imposta(righe);
   }
