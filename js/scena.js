@@ -1,0 +1,117 @@
+// Zefiro AR – renderer, mondo, turbine, skyline DTM, riferimenti
+import * as THREE from 'three';
+import { distanzaScena, dirDaAz, rad, H_OCCHIO } from './geo.js';
+import { creaTurbina } from './turbina.js';
+import { etichetta } from './hud.js';
+
+const R_SKY = 600;   // raggio della skyline e dei marker (solo direzione)
+
+export function creaScena(contenitore) {
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(devicePixelRatio);
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setClearColor(0x000000, 0);
+  renderer.xr.enabled = true;
+  renderer.localClippingEnabled = true;
+  contenitore.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.2, 20000);
+  camera.position.y = H_OCCHIO;
+  scene.add(camera);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x7a8590, 1.3));
+  const sole = new THREE.DirectionalLight(0xffffff, 1.8); sole.position.set(1, 2, 1);
+  scene.add(sole);
+
+  const mondo = new THREE.Group();
+  scene.add(mondo);
+  addEventListener('resize', () => {
+    if (renderer.xr.isPresenting) return;
+    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+  return { renderer, scene, camera, mondo };
+}
+
+const piano = (ny, c) => new THREE.Plane(new THREE.Vector3(0, ny, 0), c);
+
+function puntoSky(az, elev, r = R_SKY) {
+  const [x, , z] = dirDaAz(az), ce = Math.cos(rad(elev));
+  return new THREE.Vector3(x * r * ce, H_OCCHIO + r * Math.sin(rad(elev)), z * r * ce);
+}
+
+// Nastro (spessore angolare costante) lungo una sequenza azimut/elevazione
+function nastro(campioni, colore, spessoreGradi = 0.08, opac = 0.85) {
+  const pos = [], idx = [];
+  campioni.forEach(([az, el], i) => {
+    pos.push(...puntoSky(az, el - spessoreGradi / 2).toArray(), ...puntoSky(az, el + spessoreGradi / 2).toArray());
+    if (i) { const a = 2 * i - 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx);
+  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: colore, side: THREE.DoubleSide,
+    transparent: true, opacity: opac, depthTest: false }));
+  m.renderOrder = 5;
+  return m;
+}
+
+function svuota(g) {
+  while (g.children.length) {
+    const o = g.children.pop();
+    o.traverse(x => { x.geometry?.dispose(); x.material?.map?.dispose(); x.material?.dispose?.(); });
+  }
+}
+
+export function popolaMondo(mondo, punto, turbine) {
+  svuota(mondo);
+  const rotori = [], fantasmi = [], etichette = [], bersagli = [];
+
+  for (const t of turbine) {
+    const dS = distanzaScena(t.dist), s = dS / t.dist;
+    const [dx, , dz] = dirDaAz(t.az);
+    const yBase = H_OCCHIO + s * t.dz;
+    const yTaglio = yBase + s * Math.max(0, t.h - t.hVis);   // sotto: nascosto dal terreno
+
+    const matPieno = new THREE.MeshStandardMaterial({ color: 0xf4f4f4, roughness: 0.55,
+      clippingPlanes: [piano(1, -yTaglio)] });
+    const matFant = new THREE.MeshBasicMaterial({ color: 0x55c8ff, transparent: true, opacity: 0.3,
+      depthWrite: false, clippingPlanes: [piano(-1, yTaglio)] });
+
+    for (const [mat, lista] of [[matPieno, null], [matFant, fantasmi]]) {
+      if (lista && t.hVis >= t.h) continue;
+      const { gruppo, rotore } = creaTurbina(t, mat);
+      gruppo.scale.setScalar(s);
+      gruppo.position.set(dx * dS, yBase, dz * dS);
+      gruppo.rotation.y = -rad(t.az);           // rotore rivolto all'osservatore
+      mondo.add(gruppo); rotori.push(rotore);
+      if (lista) { gruppo.visible = false; lista.push(gruppo); }
+    }
+    const e = etichetta(t.id, new THREE.Vector3(dx * dS, yBase + s * t.h * 1.04, dz * dS));
+    mondo.add(e); etichette.push(e);
+    bersagli.push({ nome: `Turbina ${t.id}`, az: t.az, tipo: 't' });
+  }
+
+  // Skyline del DTM: orizzonte = { passo, elev:[...] } (da azimut 0)
+  const o = punto.orizzonte;
+  if (o?.elev?.length) {
+    const c = o.elev.map((e, i) => [i * o.passo, +e]); c.push([360, +o.elev[0]]);
+    const sky = nastro(c, 0xffd400); mondo.add(sky); etichette.push(sky);
+  }
+  // Graduazione orizzontale ogni 10° e punti cardinali
+  for (let a = 0; a < 360; a += 10) {
+    const tick = nastro([[a - 0.05, -0.6], [a + 0.05, -0.6]], 0xffffff, a % 90 ? 0.4 : 1.2, 0.5);
+    mondo.add(tick); etichette.push(tick);
+  }
+  [['N', 0], ['E', 90], ['S', 180], ['O', 270]].forEach(([n, a]) => {
+    const e = etichetta(n, puntoSky(a, -2.2), 0.9); mondo.add(e); etichette.push(e);
+  });
+  // Riferimenti noti (metodo A): [{nome, az, elev?}]
+  for (const r of punto.riferimenti ?? []) {
+    const el = r.elev ?? 0;
+    const m = nastro([[r.az - 0.04, el - 1], [r.az + 0.04, el - 1]], 0xff4fd8, 2, 0.9);
+    mondo.add(m); etichette.push(m);
+    const e = etichetta(r.nome, puntoSky(r.az, el + 0.2), 0.6); mondo.add(e); etichette.push(e);
+    bersagli.unshift({ nome: r.nome, az: r.az, tipo: 'r' });
+  }
+  return { rotori, fantasmi, etichette, bersagli };
+}

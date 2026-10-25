@@ -1,0 +1,15 @@
+:root { --bg:#14181c; --fg:#e8ecef; --acc:#ffd400; --mut:#8a96a0; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:18px/1.4 system-ui,sans-serif; }
+#pannello { max-width:640px; margin:0 auto; padding:16px; }
+h1 { margin:.2em 0 .6em; color:var(--acc); }
+h2 { font-size:1rem; color:var(--mut); margin:1.2em 0 .4em; }
+label { display:block; margin:.4em 0; }
+input, select, button { font:inherit; width:100%; padding:.5em; margin-top:.2em;
+  background:#232a31; color:var(--fg); border:1px solid #3a444e; border-radius:8px; }
+.griglia { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+.riga input { width:auto; margin-right:.5em; }
+button { margin-top:1em; background:var(--acc); color:#111; font-weight:700; border:none; padding:.8em; }
+button:disabled { background:#444; color:#999; }
+.nota { color:var(--mut); font-size:.9rem; min-height:1.2em; }
+details { margin-top:1.5em; color:var(--mut); }
