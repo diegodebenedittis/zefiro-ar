@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Zefiro AR</title>
 <link rel="stylesheet" href="css/stile.css">
 <script type="importmap">
@@ -40,8 +40,8 @@
   <button id="entra" disabled>Verifica WebXR…</button>
   <p id="stato" class="nota"></p>
 
-  <details>
-    <summary>Comandi in AR</summary>
+  <details id="guidaQuest">
+    <summary>Comandi · Meta Quest</summary>
     <ul>
       <li><b>Stick</b> sinistra/destra: ruota la scena (3°/s; con <b>grip</b> premuto 0,2°/s)</li>
       <li><b>Grilletto</b>: allinea il bersaglio corrente al centro del mirino</li>
@@ -51,7 +51,34 @@
       <li>Uscita: tasto Meta</li>
     </ul>
   </details>
+  <details id="guidaTelefono" hidden>
+    <summary>Comandi · telefono</summary>
+    <ul>
+      <li>Serve <b>Chrome per Android</b> con <b>Google Play Services for AR</b></li>
+      <li><b>◀ ▶</b> tenuti premuti: ruotano la scena (3°/s; con <b>Fine</b> attivo 0,2°/s)</li>
+      <li><b>Allinea</b>: porta il bersaglio corrente al centro del mirino</li>
+      <li><b>Bersaglio</b>: passa al successivo · <b>Etichette</b> · <b>Nascoste</b> · <b>Esci</b></li>
+      <li>Tieni il telefono all'altezza degli occhi, braccio fermo; foto/video con la cattura schermo</li>
+    </ul>
+  </details>
 </main>
+
+<!-- comandi a schermo (telefono): radice del DOM overlay WebXR -->
+<div id="touch" hidden>
+  <pre id="tHud"></pre>
+  <div class="barra">
+    <button id="tSx" aria-label="Ruota a sinistra">◀</button>
+    <button id="tFine">Fine</button>
+    <button id="tAllinea" class="primario">Allinea</button>
+    <button id="tDx" aria-label="Ruota a destra">▶</button>
+  </div>
+  <div class="barra piccola">
+    <button id="tBersaglio">Bersaglio</button>
+    <button id="tEtichette" class="on">Etichette</button>
+    <button id="tFantasmi">Nascoste</button>
+    <button id="tEsci">Esci</button>
+  </div>
+</div>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>
