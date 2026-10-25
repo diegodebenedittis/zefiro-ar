@@ -1,5 +1,5 @@
 // Zefiro AR – lettura Sopralluogo_dati.json (formato zefiro-campo v1, campi AR facoltativi)
-import { azDist, abbassamento, H_OCCHIO } from './geo.js?v=202610251532';
+import { azDist, abbassamento, H_OCCHIO } from './geo.js?v=202610251555';
 
 function turbinaNorm(t) {
   const h = +t.h;
@@ -15,7 +15,8 @@ export function leggiProgetto(json) {
   const turbine = json.turbine.map(turbinaNorm);
   const avvisi = [];
   if (json.turbine.some(t => t.mozzo == null)) avvisi.push('mozzo/rotore stimati (export senza campi AR)');
-  return { nome: json.progetto ?? 'Progetto', turbine, punti: json.punti, avvisi };
+  return { nome: json.progetto ?? 'Progetto', turbine, punti: json.punti, avvisi,
+           terrenoGrezzo: json.terreno ?? null, riferimentiNoti: json.riferimenti_noti ?? [] };
 }
 
 // Turbine viste da un punto: azimut, distanza, dislivello base rispetto all'occhio, quota visibile

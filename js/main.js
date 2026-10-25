@@ -1,11 +1,13 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610251532';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610251532';
-import { creaControlli } from './controlli.js?v=202610251532';
-import { creaHud } from './hud.js?v=202610251532';
-import { creaTouch } from './touch.js?v=202610251532';
-import { creaFotocamera } from './fotocamera.js?v=202610251532';
-import { deg, VERSIONE } from './geo.js?v=202610251532';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610251555';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610251555';
+import { creaControlli } from './controlli.js?v=202610251555';
+import { creaHud } from './hud.js?v=202610251555';
+import { creaTouch } from './touch.js?v=202610251555';
+import { creaFotocamera } from './fotocamera.js?v=202610251555';
+import { creaGps } from './gps.js?v=202610251555';
+import { decodificaTerreno, puntoLibero } from './terreno.js?v=202610251555';
+import { deg, VERSIONE } from './geo.js?v=202610251555';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -47,6 +49,8 @@ const azioni = {
   campo(d) { cam.regolaFov(d); }
 };
 const cam = creaFotocamera($('video'), camera);
+const gps = creaGps(() => aggiornaInfo());
+let terreno = null;                          // terreno compatto decodificato (punti liberi)
 const touch = creaTouch($('touch'), azioni);
 const ctrl = creaControlli(renderer, camera, stato, azioni, touch);
 
@@ -61,8 +65,15 @@ $('file').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   try {
     prog = leggiProgetto(JSON.parse(await f.text()));
+    terreno = null;
+    if (prog.terrenoGrezzo) {
+      try { terreno = await decodificaTerreno(prog.terrenoGrezzo); }
+      catch (err) { prog.avvisi.push('terreno non leggibile: ' + err.message); }
+    }
     const sel = $('punto'); sel.innerHTML = '';
+    sel.add(new Option('📍 Posizione attuale (GPS del telefono)', 'gps'));
     prog.punti.forEach((p, i) => sel.add(new Option(`${p.id} – ${p.etichetta ?? ''}`, i)));
+    sel.value = prog.punti.length ? '0' : 'gps';
     sel.disabled = false; $('usaDemo').checked = false;
     aggiornaInfo();
   } catch (err) { $('infoDati').textContent = 'Errore: ' + err.message; }
@@ -70,6 +81,16 @@ $('file').addEventListener('change', async e => {
 $('punto').addEventListener('change', aggiornaInfo);
 function aggiornaInfo() {
   if (!prog) return;
+  if ($('punto').value === 'gps') {
+    gps.avvia();
+    const f = gps.fix;
+    const ter = terreno ? '' : ' · export senza terreno: niente skyline né parti nascoste';
+    $('infoDati').textContent = gps.errore ? 'GPS: ' + gps.errore
+      : f ? `GPS ±${Math.round(f.acc)} m · ${f.lat.toFixed(6)}, ${f.lon.toFixed(6)}${ter}`
+          : 'In attesa del GPS… (all\'aperto, qualche secondo)' + ter;
+    return;
+  }
+  gps.ferma();
   const p = prog.punti[$('punto').value];
   $('infoDati').textContent = `${prog.nome}: ${infoPunto(prog, p)}` +
     (prog.avvisi.length ? ' · ' + prog.avvisi.join('; ') : '');
@@ -79,6 +100,12 @@ function selezione() {
   if ($('usaDemo').checked || !prog) {
     const v = k => +$(k).value;
     return datiDemo({ dist: v('dDist'), az: v('dAz'), h: v('dH'), hub: v('dHub'), D: v('dD'), dz: v('dDz') });
+  }
+  if ($('punto').value === 'gps') {
+    if (!gps.fix) throw new Error('posizione GPS non ancora disponibile');
+    const p = puntoLibero(prog, terreno, gps.fix);
+    gps.ferma();
+    return { punto: p, turbine: turbinePerPunto(prog, p) };
   }
   const p = prog.punti[$('punto').value];
   return { punto: p, turbine: turbinePerPunto(prog, p) };
@@ -148,8 +175,8 @@ function preparaScena() {
 }
 
 $('entraCam').addEventListener('click', async () => {
-  preparaScena();
   try {
+    preparaScena();
     await cam.avvia();
     stato.sensori = true;
     document.body.classList.add('modo-cam');
@@ -162,8 +189,8 @@ $('entraCam').addEventListener('click', async () => {
 });
 
 $('entra').addEventListener('click', async () => {
-  preparaScena();
   try {
+    preparaScena();
     if (supportato) {
       await avviaAR();
     } else {
