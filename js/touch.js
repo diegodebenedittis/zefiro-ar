@@ -16,6 +16,8 @@ export function creaTouch(root, azioni) {
   q('#tEtichette').addEventListener('click', e => e.currentTarget.classList.toggle('on', azioni.etichette()));
   q('#tFantasmi').addEventListener('click', e => e.currentTarget.classList.toggle('on', azioni.fantasmi()));
   q('#tEsci').addEventListener('click', () => azioni.esci());
+  q('#tCampoMeno').addEventListener('click', () => azioni.campo(-0.5));
+  q('#tCampoPiu').addEventListener('click', () => azioni.campo(0.5));
 
   // i tocchi sui pulsanti non devono diventare "select" della sessione XR
   root.addEventListener('beforexrselect', e => e.preventDefault());

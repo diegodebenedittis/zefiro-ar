@@ -1,6 +1,6 @@
 // Zefiro AR – comandi: controller Quest, pulsanti a schermo (telefono), tastiera/mouse (anteprima)
 import * as THREE from 'three';
-import { rad, deg, norm360, norm180, yawDiVettore } from './geo.js?v=202610251504';
+import { rad, deg, norm360, norm180, yawDiVettore } from './geo.js?v=202610251517';
 
 const V_NORM = 3, V_FINE = 0.2, ZONA_MORTA = 0.15;   // °/s
 
@@ -26,7 +26,7 @@ export function creaControlli(renderer, camera, stato, azioni, touch) {
   addEventListener('pointerup', () => trascina = null);
   addEventListener('pointercancel', () => trascina = null);
   addEventListener('pointermove', e => {
-    if (!trascina || renderer.xr.isPresenting) return;
+    if (!trascina || renderer.xr.isPresenting || stato.sensori) return;
     yawDesk = trascina[2] + (e.clientX - trascina[0]) * 0.003;
     pitchDesk = Math.max(-1.2, Math.min(1.2, trascina[3] + (e.clientY - trascina[1]) * 0.003));
   });
@@ -65,7 +65,7 @@ export function creaControlli(renderer, camera, stato, azioni, touch) {
     aggiorna(dt) {
       if (touch?.dir) stato.theta += rad((touch.fine ? V_FINE : V_NORM) * dt) * touch.dir;
       if (renderer.xr.isPresenting) { controllerQuest(dt); return; }
-      camera.rotation.set(pitchDesk, yawDesk, 0, 'YXZ');
+      if (!stato.sensori) camera.rotation.set(pitchDesk, yawDesk, 0, 'YXZ');   // altrimenti: giroscopio
       const v = tasti.has('Shift') ? V_FINE : V_NORM;
       if (tasti.has('ArrowRight')) stato.theta -= rad(v * dt);
       if (tasti.has('ArrowLeft')) stato.theta += rad(v * dt);

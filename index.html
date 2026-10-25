@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Zefiro AR</title>
-<link rel="stylesheet" href="css/stile.css?v=202610251504">
+<link rel="stylesheet" href="css/stile.css?v=202610251517">
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
 </script>
@@ -38,6 +38,7 @@
     <label class="riga"><input type="checkbox" id="usaDemo"> Usa la turbina di prova</label>
   </section>
 
+  <button id="entraCam" hidden>Modalità fotocamera</button>
   <button id="entra" disabled>Verifica WebXR…</button>
   <p id="stato" class="nota"></p>
 
@@ -55,7 +56,9 @@
   <details id="guidaTelefono" hidden>
     <summary>Comandi · telefono</summary>
     <ul>
-      <li>Serve <b>Chrome per Android</b> con <b>Google Play Services for AR</b></li>
+      <li><b>Modalità fotocamera</b> (consigliata): funziona su quasi tutti i telefoni, anche iPhone; concedi fotocamera e sensori</li>
+      <li><b>Campo − / +</b>: taratura del campo visivo della fotocamera (una volta per telefono): una turbina o un oggetto noto deve avere l'altezza giusta</li>
+      <li>Entra in AR (WebXR): solo Chrome per Android con Google Play Services for AR, non su tutti i modelli</li>
       <li><b>◀ ▶</b> tenuti premuti: ruotano la scena (3°/s; con <b>Fine</b> attivo 0,2°/s)</li>
       <li><b>Allinea</b>: porta il bersaglio corrente al centro del mirino</li>
       <li><b>Bersaglio</b>: passa al successivo · <b>Etichette</b> · <b>Nascoste</b> · <b>Esci</b></li>
@@ -63,6 +66,8 @@
     </ul>
   </details>
 </main>
+
+<video id="video" playsinline muted autoplay hidden></video>
 
 <!-- comandi a schermo (telefono): radice del DOM overlay WebXR -->
 <div id="touch" hidden>
@@ -80,7 +85,11 @@
     <button id="tFantasmi">Nascoste</button>
     <button id="tEsci">Esci</button>
   </div>
+  <div class="barra piccola solo-cam">
+    <button id="tCampoMeno">Campo −</button>
+    <button id="tCampoPiu">Campo +</button>
+  </div>
 </div>
-<script type="module" src="js/main.js?v=202610251504"></script>
+<script type="module" src="js/main.js?v=202610251517"></script>
 </body>
 </html>

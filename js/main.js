@@ -1,10 +1,11 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610251504';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610251504';
-import { creaControlli } from './controlli.js?v=202610251504';
-import { creaHud } from './hud.js?v=202610251504';
-import { creaTouch } from './touch.js?v=202610251504';
-import { deg, VERSIONE } from './geo.js?v=202610251504';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610251517';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610251517';
+import { creaControlli } from './controlli.js?v=202610251517';
+import { creaHud } from './hud.js?v=202610251517';
+import { creaTouch } from './touch.js?v=202610251517';
+import { creaFotocamera } from './fotocamera.js?v=202610251517';
+import { deg, VERSIONE } from './geo.js?v=202610251517';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -16,7 +17,7 @@ const MOBILE = !QUEST && (matchMedia('(pointer: coarse)').matches || /Android|iP
 let prog = null, mondoAttivo = null, inizializzato = false, etichetteOn = true, fantasmiOn = false;
 let modoTouch = false;                       // HUD e comandi a schermo (telefono)
 let tracciato = false, diag = '';            // stato del tracciamento e riga diagnostica
-const stato = { theta: 0, iB: 0 };
+const stato = { theta: 0, iB: 0, sensori: false };   // sensori: modalità fotocamera
 const hud = creaHud(camera);
 
 const azioni = {
@@ -41,9 +42,11 @@ const azioni = {
   },
   esci() {
     const s = renderer.xr.getSession();
-    if (s) s.end(); else location.reload();
-  }
+    if (s) s.end(); else { cam.ferma(); location.reload(); }
+  },
+  campo(d) { cam.regolaFov(d); }
 };
+const cam = creaFotocamera($('video'), camera);
 const touch = creaTouch($('touch'), azioni);
 const ctrl = creaControlli(renderer, camera, stato, azioni, touch);
 
@@ -96,6 +99,13 @@ if (supportato) {
     : 'Anteprima: trascina per guardarti intorno · ←/→ ruota (Shift = fine) · Invio allinea · Spazio bersaglio · h etichette · g fantasmi';
 }
 $('guidaQuest').hidden = MOBILE;
+// telefono: la modalità fotocamera è quella principale (funziona anche dove l'AR di Chrome no)
+$('entraCam').hidden = !MOBILE;
+if (MOBILE) {
+  $('entra').classList.add('secondario');
+  if (supportato) $('entra').textContent = 'Entra in AR (WebXR, sperimentale)';
+  $('stato').textContent = 'Modalità fotocamera: tieni il telefono verticale all\'altezza degli occhi, rivolto verso il parco, poi allinea con i pulsanti.';
+}
 $('versione').textContent = 'versione ' + VERSIONE;
 $('guidaTelefono').hidden = !MOBILE;
 
@@ -129,13 +139,30 @@ async function avviaAR() {
   });
 }
 
-$('entra').addEventListener('click', async () => {
+function preparaScena() {
   const { punto, turbine } = selezione();
   mondoAttivo = popolaMondo(mondo, punto, turbine);
   mondoAttivo.punto = punto; mondoAttivo.azIniziale = punto.baricentro?.az ?? turbine[0]?.az ?? 0;
   stato.iB = 0; inizializzato = false; tracciato = false; fantasmiOn = false; etichetteOn = true;
   $('tEtichette').classList.add('on'); $('tFantasmi').classList.remove('on');
+}
 
+$('entraCam').addEventListener('click', async () => {
+  preparaScena();
+  try {
+    await cam.avvia();
+    stato.sensori = true;
+    document.body.classList.add('modo-cam');
+    renderer.domElement.style.display = 'block';
+    impostaModoTouch(true);
+    $('pannello').style.display = 'none';
+  } catch (err) {
+    $('stato').textContent = 'Impossibile avviare la fotocamera: ' + err.message;
+  }
+});
+
+$('entra').addEventListener('click', async () => {
+  preparaScena();
   try {
     if (supportato) {
       await avviaAR();
@@ -153,6 +180,8 @@ $('entra').addEventListener('click', async () => {
 
 // ---------- ciclo
 function guida(b) {
+  if (stato.sensori && !tracciato) return 'In attesa dei sensori di orientamento… muovi il telefono';
+  if (stato.sensori && cam.fermo) return 'Sensori di orientamento fermi: il browser non li fornisce';
   if (!tracciato) return 'Muovi lentamente il telefono per avviare il tracciamento…';
   if (!b) return '';
   const d = ctrl.scarto(b.az);                       // >0: il bersaglio è a sinistra
@@ -168,6 +197,11 @@ renderer.setAnimationLoop((t, frame) => {
     tAttesa = pose ? tAttesa + dt : 0;
     // posa a 6 gradi di libertà, oppure posa (anche solo orientamento) stabile da 3 s
     tracciato = !!pose && (!pose.emulatedPosition || tAttesa > 3);
+  }
+  if (stato.sensori) {
+    cam.aggiorna();
+    tracciato = cam.pronto;
+    diag = `fotocamera · campo ${cam.fov}°`;
   }
   if (mondoAttivo) {
     // allineamento iniziale al baricentro solo con una posa valida
