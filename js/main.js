@@ -1,11 +1,11 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610251517';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610251517';
-import { creaControlli } from './controlli.js?v=202610251517';
-import { creaHud } from './hud.js?v=202610251517';
-import { creaTouch } from './touch.js?v=202610251517';
-import { creaFotocamera } from './fotocamera.js?v=202610251517';
-import { deg, VERSIONE } from './geo.js?v=202610251517';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610251532';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610251532';
+import { creaControlli } from './controlli.js?v=202610251532';
+import { creaHud } from './hud.js?v=202610251532';
+import { creaTouch } from './touch.js?v=202610251532';
+import { creaFotocamera } from './fotocamera.js?v=202610251532';
+import { deg, VERSIONE } from './geo.js?v=202610251532';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);

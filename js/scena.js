@@ -1,8 +1,8 @@
 // Zefiro AR – renderer, mondo, turbine, skyline DTM, riferimenti
 import * as THREE from 'three';
-import { distanzaScena, dirDaAz, rad, H_OCCHIO } from './geo.js?v=202610251517';
-import { creaTurbina } from './turbina.js?v=202610251517';
-import { etichetta } from './hud.js?v=202610251517';
+import { distanzaScena, dirDaAz, rad, H_OCCHIO } from './geo.js?v=202610251532';
+import { creaTurbina } from './turbina.js?v=202610251532';
+import { etichetta } from './hud.js?v=202610251532';
 
 const R_SKY = 470;   // raggio della skyline e dei marker (solo direzione)
 
@@ -108,13 +108,20 @@ export function popolaMondo(mondo, punto, turbine) {
     const e = etichetta(n, puntoSky(a, -2.2), 0.9); mondo.add(e); etichette.push(e);
   });
   // Riferimenti noti (metodo A): [{nome, az, elev?}]
+  // Riferimenti noti (metodo A): [{nome, az, elev, dist, visibile}] dal plugin.
+  // Asta verticale che termina sulla sommità + tacca orizzontale = punto di mira.
+  const bRif = [];
   for (const r of punto.riferimenti ?? []) {
-    const el = r.elev ?? 0;
-    const m = nastro([[r.az - 0.04, el - 1], [r.az + 0.04, el - 1]], 0xff4fd8, 2, 0.9);
-    mondo.add(m); etichette.push(m);
-    const e = etichetta(r.nome, puntoSky(r.az, el + 0.2), 0.6); mondo.add(e); etichette.push(e);
-    bersagli.unshift({ nome: r.nome, az: r.az, tipo: 'r' });
+    const el = r.elev ?? 0, vis = r.visibile !== false;
+    const col = vis ? 0xff4fd8 : 0x8a8a8a, op = vis ? 0.9 : 0.45;
+    const asta = nastro([[r.az - 0.03, el - 0.9], [r.az + 0.03, el - 0.9]], col, 1.6, op);
+    const tacca = nastro([[r.az - 0.35, el], [r.az + 0.35, el]], col, 0.05, op);
+    const km = r.dist ? ` · ${(r.dist / 1000).toFixed(1)} km` : '';
+    const e = etichetta(`${r.nome}${km}${vis ? '' : ' (nascosto)'}`, puntoSky(r.az, el + 0.25), 0.55);
+    for (const o of [asta, tacca, e]) { mondo.add(o); etichette.push(o); }
+    if (vis) bRif.push({ nome: `Rif. ${r.nome}`, az: r.az, tipo: 'r' });
   }
+  bersagli.unshift(...bRif);
   return { rotori, fantasmi, etichette, bersagli, piani };
 }
 

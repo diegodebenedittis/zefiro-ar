@@ -1,5 +1,5 @@
 // Zefiro AR – lettura Sopralluogo_dati.json (formato zefiro-campo v1, campi AR facoltativi)
-import { azDist, abbassamento, H_OCCHIO } from './geo.js?v=202610251517';
+import { azDist, abbassamento, H_OCCHIO } from './geo.js?v=202610251532';
 
 function turbinaNorm(t) {
   const h = +t.h;
