@@ -1,8 +1,8 @@
 // Zefiro AR – renderer, mondo, turbine, skyline DTM, riferimenti
 import * as THREE from 'three';
-import { distanzaScena, dirDaAz, rad, H_OCCHIO } from './geo.js';
-import { creaTurbina } from './turbina.js';
-import { etichetta } from './hud.js';
+import { distanzaScena, dirDaAz, rad, H_OCCHIO } from './geo.js?v=202610251500';
+import { creaTurbina } from './turbina.js?v=202610251500';
+import { etichetta } from './hud.js?v=202610251500';
 
 const R_SKY = 470;   // raggio della skyline e dei marker (solo direzione)
 

@@ -1,10 +1,10 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js';
-import { creaControlli } from './controlli.js';
-import { creaHud } from './hud.js';
-import { creaTouch } from './touch.js';
-import { deg } from './geo.js';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610251500';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610251500';
+import { creaControlli } from './controlli.js?v=202610251500';
+import { creaHud } from './hud.js?v=202610251500';
+import { creaTouch } from './touch.js?v=202610251500';
+import { deg, VERSIONE } from './geo.js?v=202610251500';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -96,6 +96,7 @@ if (supportato) {
     : 'Anteprima: trascina per guardarti intorno · ←/→ ruota (Shift = fine) · Invio allinea · Spazio bersaglio · h etichette · g fantasmi';
 }
 $('guidaQuest').hidden = MOBILE;
+$('versione').textContent = 'versione ' + VERSIONE;
 $('guidaTelefono').hidden = !MOBILE;
 
 // ---------- avvio sessione
@@ -178,7 +179,7 @@ renderer.setAnimationLoop((t, frame) => {
       `${mondoAttivo.punto.id}  ·  vista ${ctrl.azTesta().toFixed(1)}°N  ·  rot. ${deg(stato.theta).toFixed(1)}°`,
       b ? `Bersaglio: ${b.nome} (${b.az.toFixed(1)}°)  Δ ${ctrl.scarto(b.az).toFixed(2)}°` : 'nessun bersaglio',
       fantasmiOn ? 'parti nascoste: visibili' : '',
-      `${diag} · disegnati ${renderer.info.render.calls}`
+      `${diag} · disegnati ${renderer.info.render.calls} · v${VERSIONE.slice(-4)}`
     ];
     if (modoTouch) touch.testo(righe); else hud.imposta(righe);
   }
