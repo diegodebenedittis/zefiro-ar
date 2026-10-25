@@ -1,10 +1,10 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610251500';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610251500';
-import { creaControlli } from './controlli.js?v=202610251500';
-import { creaHud } from './hud.js?v=202610251500';
-import { creaTouch } from './touch.js?v=202610251500';
-import { deg, VERSIONE } from './geo.js?v=202610251500';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610251504';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610251504';
+import { creaControlli } from './controlli.js?v=202610251504';
+import { creaHud } from './hud.js?v=202610251504';
+import { creaTouch } from './touch.js?v=202610251504';
+import { deg, VERSIONE } from './geo.js?v=202610251504';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -101,6 +101,8 @@ $('guidaTelefono').hidden = !MOBILE;
 
 // ---------- avvio sessione
 async function avviaAR() {
+  // Chrome per Android non mostra il livello 3D se il canvas è nascosto: va reso visibile
+  renderer.domElement.style.display = 'block';
   if (!QUEST) impostaModoTouch(true);        // la radice del DOM overlay deve essere visibile
   const sess = await navigator.xr.requestSession('immersive-ar', {
     optionalFeatures: ['local-floor', 'dom-overlay'],
@@ -122,6 +124,7 @@ async function avviaAR() {
   diag = `rif. ${tipo} · overlay ${overlay ? 'sì' : 'no'} · ${n} turbine`;
   sess.addEventListener('end', () => {
     impostaModoTouch(false);
+    renderer.domElement.style.display = 'none';
     $('pannello').style.display = '';
   });
 }
