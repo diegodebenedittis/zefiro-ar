@@ -16,8 +16,19 @@ export function creaTouch(root, azioni) {
   q('#tEtichette').addEventListener('click', e => e.currentTarget.classList.toggle('on', azioni.etichette()));
   q('#tFantasmi').addEventListener('click', e => e.currentTarget.classList.toggle('on', azioni.fantasmi()));
   q('#tEsci').addEventListener('click', () => azioni.esci());
-  q('#tCampoMeno').addEventListener('click', () => azioni.campo(-0.5));
-  q('#tCampoPiu').addEventListener('click', () => azioni.campo(0.5));
+  // Campo −/+: 1° per tocco; tenendo premuto ripete sempre più veloce
+  for (const [sel, d] of [['#tCampoMeno', -1], ['#tCampoPiu', 1]]) {
+    const b = q(sel);
+    let timer = null;
+    const stop = () => { clearTimeout(timer); timer = null; };
+    b.addEventListener('pointerdown', e => {
+      e.preventDefault(); b.setPointerCapture(e.pointerId);
+      let n = 0;
+      const passo = () => { azioni.campo(d * (n > 8 ? 2 : 1)); n++; timer = setTimeout(passo, n < 3 ? 350 : 120); };
+      passo();
+    });
+    for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, stop);
+  }
 
   // i tocchi sui pulsanti non devono diventare "select" della sessione XR
   root.addEventListener('beforexrselect', e => e.preventDefault());
@@ -34,6 +45,7 @@ export function creaTouch(root, azioni) {
       gd.textContent = guida || ''; gd.hidden = !guida;
       hud.textContent = righe.filter(Boolean).join('\n');
     },
-    mostra(v) { root.hidden = !v; if (!v) dir = 0; }
+    mostra(v) { root.hidden = !v; if (!v) dir = 0; },
+    campo(valore) { q('#tCampo').textContent = valore.toFixed(0) + '°'; }
   };
 }

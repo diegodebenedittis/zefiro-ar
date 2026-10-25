@@ -45,3 +45,5 @@ canvas { position:fixed; inset:0; width:100vw !important; height:100vh !importan
 .solo-cam { display:none !important; }
 body.modo-cam .solo-cam { display:flex !important; }
 body.modo-cam { background:#000; }
+#touch .valore { flex:0.8; align-self:center; text-align:center; color:#fff; font:700 16px system-ui,sans-serif;
+  background:rgba(0,0,0,.55); border-radius:10px; padding:9px 2px; }

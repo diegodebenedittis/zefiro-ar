@@ -1,13 +1,13 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610251555';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610251555';
-import { creaControlli } from './controlli.js?v=202610251555';
-import { creaHud } from './hud.js?v=202610251555';
-import { creaTouch } from './touch.js?v=202610251555';
-import { creaFotocamera } from './fotocamera.js?v=202610251555';
-import { creaGps } from './gps.js?v=202610251555';
-import { decodificaTerreno, puntoLibero } from './terreno.js?v=202610251555';
-import { deg, VERSIONE } from './geo.js?v=202610251555';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610251911';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610251911';
+import { creaControlli } from './controlli.js?v=202610251911';
+import { creaHud } from './hud.js?v=202610251911';
+import { creaTouch } from './touch.js?v=202610251911';
+import { creaFotocamera } from './fotocamera.js?v=202610251911';
+import { creaGps } from './gps.js?v=202610251911';
+import { decodificaTerreno, puntoLibero } from './terreno.js?v=202610251911';
+import { deg, VERSIONE } from './geo.js?v=202610251911';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -18,7 +18,8 @@ const MOBILE = !QUEST && (matchMedia('(pointer: coarse)').matches || /Android|iP
 
 let prog = null, mondoAttivo = null, inizializzato = false, etichetteOn = true, fantasmiOn = false;
 let modoTouch = false;                       // HUD e comandi a schermo (telefono)
-let tracciato = false, diag = '';            // stato del tracciamento e riga diagnostica
+let tracciato = false, diag = '';
+let avviso = null;                           // messaggio temporaneo nella fascia gialla            // stato del tracciamento e riga diagnostica
 const stato = { theta: 0, iB: 0, sensori: false };   // sensori: modalità fotocamera
 const hud = creaHud(camera);
 
@@ -46,7 +47,11 @@ const azioni = {
     const s = renderer.xr.getSession();
     if (s) s.end(); else { cam.ferma(); location.reload(); }
   },
-  campo(d) { cam.regolaFov(d); }
+  campo(d) {
+    cam.regolaFov(d);
+    touch.campo(cam.fov);
+    avviso = { testo: `Campo visivo ${cam.fov.toFixed(0)}° (verticale schermo ${camera.fov.toFixed(1)}°)`, fino: performance.now() + 1500 };
+  }
 };
 const cam = creaFotocamera($('video'), camera);
 const gps = creaGps(() => aggiornaInfo());
@@ -179,6 +184,7 @@ $('entraCam').addEventListener('click', async () => {
     preparaScena();
     await cam.avvia();
     stato.sensori = true;
+    touch.campo(cam.fov);
     document.body.classList.add('modo-cam');
     renderer.domElement.style.display = 'block';
     impostaModoTouch(true);
@@ -207,6 +213,7 @@ $('entra').addEventListener('click', async () => {
 
 // ---------- ciclo
 function guida(b) {
+  if (avviso && performance.now() < avviso.fino) return avviso.testo;
   if (stato.sensori && !tracciato) return 'In attesa dei sensori di orientamento… muovi il telefono';
   if (stato.sensori && cam.fermo) return 'Sensori di orientamento fermi: il browser non li fornisce';
   if (!tracciato) return 'Muovi lentamente il telefono per avviare il tracciamento…';
