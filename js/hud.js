@@ -25,6 +25,16 @@ export function etichetta(testo, pos, angGradi = 0.7) {
   return s;
 }
 
+// Simbolo senza sfondo (es. freccia del bersaglio), base del simbolo sulla posizione
+export function simbolo(testo, colore = '#ffd400') {
+  const tex = new THREE.CanvasTexture(canvasTesto([testo], { larg: 128, alt: 128, font: 110, sfondo: null, colore }));
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
+  s.center.set(0.5, 0.05);
+  s.renderOrder = 30;
+  return s;
+}
+
 // Pannello HUD agganciato alla camera
 export function creaHud(camera) {
   const c = document.createElement('canvas'); c.width = 1024; c.height = 320;

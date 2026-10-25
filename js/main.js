@@ -1,13 +1,13 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610251911';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610251911';
-import { creaControlli } from './controlli.js?v=202610251911';
-import { creaHud } from './hud.js?v=202610251911';
-import { creaTouch } from './touch.js?v=202610251911';
-import { creaFotocamera } from './fotocamera.js?v=202610251911';
-import { creaGps } from './gps.js?v=202610251911';
-import { decodificaTerreno, puntoLibero } from './terreno.js?v=202610251911';
-import { deg, VERSIONE } from './geo.js?v=202610251911';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610251915';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610251915';
+import { creaControlli } from './controlli.js?v=202610251915';
+import { creaHud } from './hud.js?v=202610251915';
+import { creaTouch } from './touch.js?v=202610251915';
+import { creaFotocamera } from './fotocamera.js?v=202610251915';
+import { creaGps } from './gps.js?v=202610251915';
+import { decodificaTerreno, puntoLibero } from './terreno.js?v=202610251915';
+import { deg, VERSIONE } from './geo.js?v=202610251915';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -29,8 +29,12 @@ const azioni = {
     ctrl.allineaAz(b.az);
   },
   successivo() {
-    if (!mondoAttivo?.bersagli.length) return;
-    stato.iB = (stato.iB + 1) % mondoAttivo.bersagli.length;
+    const n = mondoAttivo?.bersagli.length ?? 0;
+    if (!n) return;
+    stato.iB = (stato.iB + 1) % n;
+    const b = mondoAttivo.bersagli[stato.iB];
+    avviso = { testo: n > 1 ? `Bersaglio ${stato.iB + 1}/${n}: ${b.nome} (${b.az.toFixed(1)}°) ▼`
+                            : `Un solo bersaglio: ${b.nome}`, fino: performance.now() + 2000 };
   },
   etichette() {
     etichetteOn = !etichetteOn;
@@ -245,6 +249,7 @@ renderer.setAnimationLoop((t, frame) => {
     seguiTesta(mondo, camera, mondoAttivo.piani);
     for (const r of mondoAttivo.rotori) r.rotation.z -= dt * 2 * Math.PI * 10 / 60;   // 10 giri/min
     const b = mondoAttivo.bersagli[stato.iB];
+    mondoAttivo.segna(b);
     const righe = [
       guida(b),
       `${mondoAttivo.punto.id}  ·  vista ${ctrl.azTesta().toFixed(1)}°N  ·  rot. ${deg(stato.theta).toFixed(1)}°`,

@@ -1,8 +1,8 @@
 // Zefiro AR – renderer, mondo, turbine, skyline DTM, riferimenti
 import * as THREE from 'three';
-import { distanzaScena, dirDaAz, rad, H_OCCHIO } from './geo.js?v=202610251911';
-import { creaTurbina } from './turbina.js?v=202610251911';
-import { etichetta } from './hud.js?v=202610251911';
+import { distanzaScena, dirDaAz, rad, deg, H_OCCHIO } from './geo.js?v=202610251915';
+import { creaTurbina } from './turbina.js?v=202610251915';
+import { etichetta, simbolo } from './hud.js?v=202610251915';
 
 const R_SKY = 470;   // raggio della skyline e dei marker (solo direzione)
 
@@ -90,7 +90,8 @@ export function popolaMondo(mondo, punto, turbine) {
     }
     const e = etichetta(t.id, new THREE.Vector3(dx * dS, yBase + s * t.h * 1.04, dz * dS));
     mondo.add(e); etichette.push(e);
-    bersagli.push({ nome: `Turbina ${t.id}`, az: t.az, tipo: 't' });
+    const elTop = deg(Math.atan2(yBase + s * t.h - H_OCCHIO, dS));   // elevazione della punta pala
+    bersagli.push({ nome: `Turbina ${t.id}`, az: t.az, tipo: 't', el: elTop });
   }
 
   // Skyline del DTM: orizzonte = { passo, elev:[...] } (da azimut 0)
@@ -119,10 +120,19 @@ export function popolaMondo(mondo, punto, turbine) {
     const km = r.dist ? ` · ${(r.dist / 1000).toFixed(1)} km` : '';
     const e = etichetta(`${r.nome}${km}${vis ? '' : ' (nascosto)'}`, puntoSky(r.az, el + 0.25), 0.55);
     for (const o of [asta, tacca, e]) { mondo.add(o); etichette.push(o); }
-    if (vis) bRif.push({ nome: `Rif. ${r.nome}`, az: r.az, tipo: 'r' });
+    if (vis) bRif.push({ nome: `Rif. ${r.nome}`, az: r.az, tipo: 'r', el });
   }
   bersagli.unshift(...bRif);
-  return { rotori, fantasmi, etichette, bersagli, piani };
+  // freccia gialla sopra il bersaglio selezionato
+  const freccia = simbolo('▼');
+  const lato = R_SKY * Math.tan(rad(1.4));
+  freccia.scale.set(lato, lato, 1);
+  mondo.add(freccia);
+  const segna = b => {
+    freccia.visible = !!b;
+    if (b) freccia.position.copy(puntoSky(b.az, (b.el ?? 0) + 0.5));
+  };
+  return { rotori, fantasmi, etichette, bersagli, piani, segna };
 }
 
 // La scena segue la testa: l'occhio del mondo (0, H_OCCHIO, 0) coincide con la camera.
