@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zefiro AR – test</title>
+<style>
+  body { margin:0; background:#14181c; color:#eee; font:18px system-ui,sans-serif; }
+  main { padding:16px; max-width:600px; margin:auto; }
+  button { display:block; width:100%; margin:10px 0; padding:14px; font:inherit; font-weight:700;
+    border:0; border-radius:10px; background:#ffd400; color:#111; }
+  p { color:#9aa; font-size:15px; }
+  #ov { position:fixed; inset:0; pointer-events:none; }
+  #ov div { position:absolute; top:20px; left:0; right:0; text-align:center; color:#fff;
+    background:rgba(0,0,0,.5); padding:6px; font-size:14px; }
+  #ov button { position:absolute; bottom:20px; left:20%; width:60%; pointer-events:auto; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<main>
+  <h2>Test AR telefono</h2>
+  <p>Prova i test uno alla volta. In ognuno devono comparire: un <b>cubo rosso</b> a 1 m davanti,
+     una <b>sfera verde</b> a 20 m e una <b>sfera blu</b> a 300 m (tutte dove guardavi all'avvio).
+     Dimmi quali test mostrano qualcosa.</p>
+  <button data-t="1">Test 1 · base (come esempi three.js)</button>
+  <button data-t="2">Test 2 · + local-floor</button>
+  <button data-t="3">Test 3 · + pulsanti sovrapposti (dom-overlay)</button>
+  <button data-t="4">Test 4 · + piani di taglio (clipping)</button>
+  <button data-t="5">Test 5 · configurazione di Zefiro AR</button>
+  <p id="esito"></p>
+</main>
+<div id="ov" hidden><div id="info"></div><button id="esci">Esci</button></div>
+<script type="module">
+import * as THREE from 'three';
+const $ = id => document.getElementById(id);
+let renderer, scene, camera;
+
+function prepara(t) {
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(devicePixelRatio);
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.xr.enabled = true;
+  if (t >= 4) renderer.localClippingEnabled = true;
+  document.body.appendChild(renderer.domElement);
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, t >= 5 ? 0.1 : 0.01, t >= 5 ? 1000 : 2000);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x666666, 2));
+  const clip = t >= 4 ? [new THREE.Plane(new THREE.Vector3(0, 1, 0), 5)] : [];
+  const cubo = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2),
+    new THREE.MeshStandardMaterial({ color: 0xff2020, clippingPlanes: clip }));
+  cubo.position.set(0, t >= 2 ? 1.4 : 0, -1);
+  const s1 = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color: 0x20ff40 }));
+  s1.position.set(-3, t >= 2 ? 1.4 : 0, -20);
+  const s2 = new THREE.Mesh(new THREE.SphereGeometry(15, 24, 16), new THREE.MeshBasicMaterial({ color: 0x3060ff }));
+  s2.position.set(40, t >= 2 ? 1.4 : 0, -300);
+  scene.add(cubo, s1, s2);
+  if (t >= 5) {
+    scene.add(camera);
+    const mir = new THREE.Mesh(new THREE.RingGeometry(0.008, 0.013, 32),
+      new THREE.MeshBasicMaterial({ color: 0xff3030, depthTest: false }));
+    mir.position.set(0, 0, -1); camera.add(mir);
+  }
+  renderer.setAnimationLoop((time, frame) => {
+    cubo.rotation.y = time / 1000;
+    if (frame) $('info').textContent = `test ${t} · disegnati ${renderer.info.render.calls} · ` +
+      `rif ${renderer.xr.getReferenceSpace() ? 'ok' : '-'} · posa ${frame.getViewerPose(renderer.xr.getReferenceSpace()) ? 'ok' : '-'}`;
+    renderer.render(scene, camera);
+  });
+}
+
+async function avvia(t) {
+  prepara(t);
+  const opz = {};
+  if (t >= 2) opz.optionalFeatures = ['local-floor'];
+  if (t >= 3) { opz.optionalFeatures.push('dom-overlay'); opz.domOverlay = { root: $('ov') }; $('ov').hidden = false; }
+  const s = await navigator.xr.requestSession('immersive-ar', opz);
+  renderer.xr.setReferenceSpaceType(t >= 2 ? 'local-floor' : 'local');
+  await renderer.xr.setSession(s);
+  s.addEventListener('end', () => location.reload());
+}
+
+document.querySelectorAll('main button').forEach(b => b.addEventListener('click', () =>
+  avvia(+b.dataset.t).catch(e => $('esito').textContent = 'Errore: ' + e.message)));
+$('esci').addEventListener('click', () => renderer.xr.getSession()?.end());
+</script>
+</body>
+</html>
