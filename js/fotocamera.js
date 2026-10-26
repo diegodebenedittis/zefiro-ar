@@ -20,7 +20,28 @@ export function creaFotocamera(video, camera) {
   const q0 = new THREE.Quaternion(), zee = new THREE.Vector3(0, 0, 1);
   const q1 = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));   // camera verso il retro
 
+  // Bussola: direzione magnetica della fotocamera, media degli ultimi campioni
+  const qA = new THREE.Quaternion(), avanti = new THREE.Vector3();
+  let campioni = [];
+  function aggiungiRotta(h) {
+    campioni.push([performance.now(), Math.sin(h * DEG), Math.cos(h * DEG)]);
+    const lim = performance.now() - 1000;
+    campioni = campioni.filter(c => c[0] > lim).slice(-30);
+  }
+  function quaternione(qOut, e) {
+    const orient = (screen.orientation?.angle ?? window.orientation ?? 0) * DEG;
+    eul.set(e.beta * DEG, e.alpha * DEG, -e.gamma * DEG, 'YXZ');
+    return qOut.setFromEuler(eul).multiply(q1).multiply(q0.setFromAxisAngle(zee, -orient));
+  }
+  function suAssoluto(e) {                     // Android: alpha riferito al nord magnetico
+    if (e.alpha == null || e.absolute === false) return;
+    avanti.set(0, 0, -1).applyQuaternion(quaternione(qA, e));
+    if (Math.hypot(avanti.x, avanti.z) < 0.3) return;          // fotocamera quasi verticale
+    aggiungiRotta(((Math.atan2(avanti.x, -avanti.z) / DEG) + 360) % 360);
+  }
+
   function suOrient(e) {
+    if (e.webkitCompassHeading != null) aggiungiRotta(e.webkitCompassHeading);   // iPhone
     if (e.alpha == null) return;
     ultimo = performance.now();
     const orient = (screen.orientation?.angle ?? window.orientation ?? 0) * DEG;
@@ -57,6 +78,7 @@ export function creaFotocamera(video, camera) {
       video.addEventListener('loadedmetadata', aggiornaFov);
       await video.play();
       addEventListener('deviceorientation', suOrient);
+      addEventListener('deviceorientationabsolute', suAssoluto);
       addEventListener('resize', suResize);
       screen.orientation?.addEventListener?.('change', suResize);
       aggiornaFov();
@@ -67,6 +89,12 @@ export function creaFotocamera(video, camera) {
       if (!attivo || !ultimo) return;
       if (primo) { q.copy(qT); primo = false; } else q.slerp(qT, 0.35);   // smorza il tremolio
       camera.quaternion.copy(q);
+    },
+    // direzione magnetica media della fotocamera (gradi) o null se la bussola non risponde
+    get bussola() {
+      if (!campioni.length || performance.now() - campioni[campioni.length - 1][0] > 1500) return null;
+      const x = campioni.reduce((a, c) => a + c[1], 0), y = campioni.reduce((a, c) => a + c[2], 0);
+      return ((Math.atan2(x, y) / DEG) + 360) % 360;
     },
     get pronto() { return attivo && ultimo > 0; },
     get fermo() { return attivo && ultimo > 0 && performance.now() - ultimo > 2000; },
@@ -79,6 +107,7 @@ export function creaFotocamera(video, camera) {
     ferma() {
       stream?.getTracks().forEach(t => t.stop());
       removeEventListener('deviceorientation', suOrient);
+      removeEventListener('deviceorientationabsolute', suAssoluto);
       removeEventListener('resize', suResize);
       video.hidden = true; attivo = false;
     }

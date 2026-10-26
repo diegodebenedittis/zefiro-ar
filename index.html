@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Zefiro AR</title>
-<link rel="stylesheet" href="css/stile.css?v=202610251915">
+<link rel="stylesheet" href="css/stile.css?v=202610260753">
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
 </script>
@@ -58,6 +58,7 @@
     <ul>
       <li><b>Modalità fotocamera</b> (consigliata): funziona su quasi tutti i telefoni, anche iPhone; concedi fotocamera e sensori</li>
       <li><b>📍 Posizione attuale</b> (nel menu Punto di vista): usa il GPS del telefono; quota, skyline e parti nascoste vengono calcolate sul posto dal terreno esportato dal plugin</li>
+      <li><b>Bussola</b>: orienta la scena con la bussola del telefono (±5–10°, disturbata da metalli e auto); all'avvio viene usata da sola se disponibile; poi rifinisci con Allinea</li>
       <li><b>Campo − / +</b>: taratura del campo visivo della fotocamera (una volta per telefono): una turbina o un oggetto noto deve avere l'altezza giusta</li>
       <li>Entra in AR (WebXR): solo Chrome per Android con Google Play Services for AR, non su tutti i modelli</li>
       <li><b>◀ ▶</b> tenuti premuti: ruotano la scena (3°/s; con <b>Fine</b> attivo 0,2°/s)</li>
@@ -72,6 +73,7 @@
 
 <!-- comandi a schermo (telefono): radice del DOM overlay WebXR -->
 <div id="touch" hidden>
+  <div id="tMirino"></div>
   <pre id="tHud"></pre>
   <div id="tGuida"></div>
   <div class="barra">
@@ -90,8 +92,9 @@
     <button id="tCampoMeno">Campo −</button>
     <span id="tCampo" class="valore">67°</span>
     <button id="tCampoPiu">Campo +</button>
+    <button id="tBussola">Bussola</button>
   </div>
 </div>
-<script type="module" src="js/main.js?v=202610251915"></script>
+<script type="module" src="js/main.js?v=202610260753"></script>
 </body>
 </html>

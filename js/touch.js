@@ -16,6 +16,7 @@ export function creaTouch(root, azioni) {
   q('#tEtichette').addEventListener('click', e => e.currentTarget.classList.toggle('on', azioni.etichette()));
   q('#tFantasmi').addEventListener('click', e => e.currentTarget.classList.toggle('on', azioni.fantasmi()));
   q('#tEsci').addEventListener('click', () => azioni.esci());
+  q('#tBussola').addEventListener('click', () => azioni.bussola());
   // Campo −/+: 1° per tocco; tenendo premuto ripete sempre più veloce
   for (const [sel, d] of [['#tCampoMeno', -1], ['#tCampoPiu', 1]]) {
     const b = q(sel);

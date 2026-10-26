@@ -1,13 +1,13 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610251915';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610251915';
-import { creaControlli } from './controlli.js?v=202610251915';
-import { creaHud } from './hud.js?v=202610251915';
-import { creaTouch } from './touch.js?v=202610251915';
-import { creaFotocamera } from './fotocamera.js?v=202610251915';
-import { creaGps } from './gps.js?v=202610251915';
-import { decodificaTerreno, puntoLibero } from './terreno.js?v=202610251915';
-import { deg, VERSIONE } from './geo.js?v=202610251915';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610260753';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610260753';
+import { creaControlli } from './controlli.js?v=202610260753';
+import { creaHud } from './hud.js?v=202610260753';
+import { creaTouch } from './touch.js?v=202610260753';
+import { creaFotocamera } from './fotocamera.js?v=202610260753';
+import { creaGps } from './gps.js?v=202610260753';
+import { decodificaTerreno, puntoLibero } from './terreno.js?v=202610260753';
+import { deg, VERSIONE } from './geo.js?v=202610260753';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -51,6 +51,13 @@ const azioni = {
     const s = renderer.xr.getSession();
     if (s) s.end(); else { cam.ferma(); location.reload(); }
   },
+  bussola() {
+    const h = cam.bussola;
+    if (h == null) { avviso = { testo: 'Bussola non disponibile su questo telefono/browser', fino: performance.now() + 2500 }; return; }
+    const az = (h + declinazione() + 360) % 360;
+    ctrl.allineaAz(az);
+    avviso = { testo: `Orientato con la bussola: ${az.toFixed(0)}°N (±5–10°) · rifinisci con Allinea`, fino: performance.now() + 3000 };
+  },
   campo(d) {
     cam.regolaFov(d);
     touch.campo(cam.fov);
@@ -67,7 +74,10 @@ function impostaModoTouch(v) {
   modoTouch = v;
   touch.mostra(v);
   hud.visibile = etichetteOn && !v;
+  hud.mirino = !v;                           // telefono: mirino CSS a dimensione fissa
 }
+// declinazione magnetica (°E) dall'export, per passare dalla bussola al Nord vero
+const declinazione = () => +(prog?.declinazione ?? 0) || 0;
 
 // ---------- dati
 $('file').addEventListener('change', async e => {
@@ -179,7 +189,7 @@ function preparaScena() {
   const { punto, turbine } = selezione();
   mondoAttivo = popolaMondo(mondo, punto, turbine);
   mondoAttivo.punto = punto; mondoAttivo.azIniziale = punto.baricentro?.az ?? turbine[0]?.az ?? 0;
-  stato.iB = 0; inizializzato = false; tracciato = false; fantasmiOn = false; etichetteOn = true;
+  stato.iB = 0; inizializzato = false; tracciato = false; tBussola = 0; fantasmiOn = false; etichetteOn = true;
   $('tEtichette').classList.add('on'); $('tFantasmi').classList.remove('on');
 }
 
@@ -227,7 +237,7 @@ function guida(b) {
   return d > 0 ? `◀  gira a sinistra di ${d.toFixed(0)}°` : `gira a destra di ${(-d).toFixed(0)}°  ▶`;
 }
 
-let tPrec = 0, tAttesa = 0;
+let tPrec = 0, tAttesa = 0, tBussola = 0;
 renderer.setAnimationLoop((t, frame) => {
   const dt = Math.min(0.1, (t - tPrec) / 1000 || 0); tPrec = t;
   if (frame && !tracciato) {
@@ -243,7 +253,15 @@ renderer.setAnimationLoop((t, frame) => {
   }
   if (mondoAttivo) {
     // allineamento iniziale al baricentro solo con una posa valida
-    if (!inizializzato && tracciato) { ctrl.allineaAz(mondoAttivo.azIniziale); inizializzato = true; }
+    if (!inizializzato && tracciato) {
+      // telefono: bussola se risponde entro ~1,5 s, altrimenti baricentro davanti a sé
+      tBussola += dt;
+      if (stato.sensori && cam.bussola != null) { azioni.bussola(); inizializzato = true; }
+      else if (!stato.sensori || tBussola > 1.5) {
+        ctrl.allineaAz(mondoAttivo.azIniziale); inizializzato = true;
+        if (stato.sensori) avviso = { testo: 'Bussola non disponibile: parco messo davanti a te, allinea a mano', fino: performance.now() + 3000 };
+      }
+    }
     ctrl.aggiorna(dt);
     mondo.rotation.y = stato.theta;
     seguiTesta(mondo, camera, mondoAttivo.piani);

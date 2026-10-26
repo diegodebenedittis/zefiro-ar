@@ -1,5 +1,5 @@
 // Zefiro AR – lettura Sopralluogo_dati.json (formato zefiro-campo v1, campi AR facoltativi)
-import { azDist, abbassamento, H_OCCHIO } from './geo.js?v=202610251915';
+import { azDist, abbassamento, H_OCCHIO } from './geo.js?v=202610260753';
 
 function turbinaNorm(t) {
   const h = +t.h;
@@ -16,6 +16,7 @@ export function leggiProgetto(json) {
   const avvisi = [];
   if (json.turbine.some(t => t.mozzo == null)) avvisi.push('mozzo/rotore stimati (export senza campi AR)');
   return { nome: json.progetto ?? 'Progetto', turbine, punti: json.punti, avvisi,
+           declinazione: +(json.declinazione ?? 0) || 0,
            terrenoGrezzo: json.terreno ?? null, riferimentiNoti: json.riferimenti_noti ?? [] };
 }
 

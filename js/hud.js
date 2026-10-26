@@ -62,6 +62,8 @@ export function creaHud(camera) {
       tex.needsUpdate = true;
     },
     set visibile(v) { m.visible = v; },
+    // mirino 3D (Quest); sul telefono si usa quello CSS a dimensione fissa
+    set mirino(v) { mir.visible = croce.visible = croceH.visible = v; },
     posizione(x, y, z) { m.position.set(x, y, z); }
   };
 }

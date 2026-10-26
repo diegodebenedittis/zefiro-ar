@@ -47,3 +47,9 @@ body.modo-cam .solo-cam { display:flex !important; }
 body.modo-cam { background:#000; }
 #touch .valore { flex:0.8; align-self:center; text-align:center; color:#fff; font:700 16px system-ui,sans-serif;
   background:rgba(0,0,0,.55); border-radius:10px; padding:9px 2px; }
+/* mirino a dimensione fissa (non segue il campo visivo) */
+#tMirino { position:fixed; left:50%; top:50%; width:34px; height:34px; margin:-17px 0 0 -17px;
+  border:3px solid #ff3030; border-radius:50%; pointer-events:none; z-index:11; box-sizing:border-box; }
+#tMirino::before, #tMirino::after { content:''; position:absolute; background:#ff3030; }
+#tMirino::before { left:50%; top:-14px; width:2px; height:56px; margin-left:-1px; }
+#tMirino::after { top:50%; left:-14px; height:2px; width:56px; margin-top:-1px; }
