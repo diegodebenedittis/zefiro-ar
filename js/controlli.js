@@ -1,6 +1,6 @@
 // Zefiro AR – comandi: controller Quest, pulsanti a schermo (telefono), tastiera/mouse (anteprima)
 import * as THREE from 'three';
-import { rad, deg, norm360, norm180, yawDiVettore } from './geo.js?v=202610260801';
+import { rad, deg, norm360, norm180, yawDiVettore } from './geo.js?v=202610260811';
 
 const V_NORM = 3, V_FINE = 0.2, ZONA_MORTA = 0.15;   // °/s
 
@@ -63,7 +63,7 @@ export function creaControlli(renderer, camera, stato, azioni, touch) {
     allineaAz(az) { stato.theta = yawTesta() + rad(az); },
 
     aggiorna(dt) {
-      if (touch?.dir) stato.theta += rad((touch.fine ? V_FINE : V_NORM) * dt) * touch.dir;
+      if (touch?.dir) stato.theta += rad(touch.velocita * dt) * touch.dir;
       if (renderer.xr.isPresenting) { controllerQuest(dt); return; }
       if (!stato.sensori) camera.rotation.set(pitchDesk, yawDesk, 0, 'YXZ');   // altrimenti: giroscopio
       const v = tasti.has('Shift') ? V_FINE : V_NORM;

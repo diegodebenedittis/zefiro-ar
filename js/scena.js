@@ -1,8 +1,8 @@
 // Zefiro AR – renderer, mondo, turbine, skyline DTM, riferimenti
 import * as THREE from 'three';
-import { distanzaScena, dirDaAz, rad, deg, H_OCCHIO } from './geo.js?v=202610260801';
-import { creaTurbina } from './turbina.js?v=202610260801';
-import { etichetta, simbolo } from './hud.js?v=202610260801';
+import { distanzaScena, dirDaAz, rad, deg, H_OCCHIO } from './geo.js?v=202610260811';
+import { creaTurbina } from './turbina.js?v=202610260811';
+import { etichetta, simbolo } from './hud.js?v=202610260811';
 
 const R_SKY = 470;   // raggio della skyline e dei marker (solo direzione)
 
@@ -120,7 +120,7 @@ export function popolaMondo(mondo, punto, turbine) {
     const km = r.dist ? ` · ${(r.dist / 1000).toFixed(1)} km` : '';
     const e = etichetta(`${r.nome}${km}${vis ? '' : ' (nascosto)'}`, puntoSky(r.az, el + 0.25), 0.55);
     for (const o of [asta, tacca, e]) { mondo.add(o); etichette.push(o); }
-    if (vis) bRif.push({ nome: `Rif. ${r.nome}`, az: r.az, tipo: 'r', el });
+    if (vis) bRif.push({ nome: /^rif/i.test(r.nome) ? r.nome : `Rif. ${r.nome}`, az: r.az, tipo: 'r', el });
   }
   bersagli.unshift(...bRif);
   // freccia gialla sopra il bersaglio selezionato

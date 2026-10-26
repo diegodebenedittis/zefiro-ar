@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Zefiro AR</title>
-<link rel="stylesheet" href="css/stile.css?v=202610260801">
+<link rel="stylesheet" href="css/stile.css?v=202610260811">
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
 </script>
@@ -56,16 +56,12 @@
   <details id="guidaTelefono" hidden>
     <summary>Comandi · telefono</summary>
     <ul>
-      <li><b>Modalità fotocamera</b> (consigliata): funziona su quasi tutti i telefoni, anche iPhone; concedi fotocamera e sensori</li>
-      <li><b>📍 Posizione attuale</b> (nel menu Punto di vista): usa il GPS del telefono; quota, skyline e parti nascoste vengono calcolate sul posto dal terreno esportato dal plugin</li>
-      <li><b>Bussola</b>: orienta la scena con la bussola del telefono (±5–10°, disturbata da metalli e auto); all'avvio viene usata da sola se disponibile; poi rifinisci con Allinea</li>
-      <li><b>2 punti</b> (taratura consigliata): l'immagine si ferma; tocca il primo bersaglio reale (azzurro) e poi il secondo (verde): campo visivo e orientamento vengono calcolati insieme · <b>Applica</b>. Scegli due bersagli ben separati (≥ 10°) e ben riconoscibili</li>
-      <li><b>Campo − / +</b>: taratura del campo visivo della fotocamera (una volta per telefono): una turbina o un oggetto noto deve avere l'altezza giusta</li>
-      <li>Entra in AR (WebXR): solo Chrome per Android con Google Play Services for AR, non su tutti i modelli</li>
-      <li><b>◀ ▶</b> tenuti premuti: ruotano la scena (3°/s; con <b>Fine</b> attivo 0,2°/s)</li>
-      <li><b>Allinea</b>: porta il bersaglio corrente al centro del mirino</li>
-      <li><b>Bersaglio</b>: passa al successivo · <b>Etichette</b> · <b>Nascoste</b> · <b>Esci</b></li>
-      <li>Tieni il telefono all'altezza degli occhi, braccio fermo; foto/video con la cattura schermo</li>
+      <li><b>Modalità fotocamera</b> (consigliata): quasi tutti i telefoni, anche iPhone; concedi fotocamera e sensori. All'avvio si orienta con la bussola (±5–10°)</li>
+      <li><b>📍 Posizione attuale</b> (menu Punto di vista): usa il GPS; quota, skyline e parti nascoste calcolate sul posto</li>
+      <li><b>◀ ▶</b>: tocco = 0,1°; tenuti premuti ruotano sempre più veloci · <b>Allinea</b>: il bersaglio ▼ va al centro del mirino</li>
+      <li><b>☰</b>: Bersaglio (cambia ▼), <b>Taratura 2 punti</b>, Bussola, Campo −/+, Etichette, Nascoste, Esci</li>
+      <li><b>Taratura 2 punti</b>: l'immagine si ferma; tocca il bersaglio reale A (azzurro) e poi B (verde), lontani fra loro ≥ 10° · Applica: campo visivo e orientamento insieme</li>
+      <li>Entra in AR (WebXR): solo Chrome per Android con ARCore, non su tutti i modelli</li>
     </ul>
   </details>
 </main>
@@ -76,37 +72,44 @@
 <div id="touch" hidden>
   <div id="tMirino"></div>
   <svg id="tTar" hidden>
-    <line id="tarLinea" stroke="#ffd400" stroke-width="3" stroke-dasharray="10 6"/>
-    <circle id="tarA" r="14" fill="none" stroke="#00e5ff" stroke-width="3"/>
-    <circle id="tarB" r="14" fill="none" stroke="#7CFC00" stroke-width="3"/>
+    <line id="tarLinea" stroke="#ffd400" stroke-width="2" stroke-dasharray="8 6"/>
+    <circle id="tarA" r="12" fill="none" stroke="#00e5ff" stroke-width="2.5"/>
+    <circle id="tarB" r="12" fill="none" stroke="#7CFC00" stroke-width="2.5"/>
   </svg>
-  <pre id="tHud"></pre>
-  <div id="tGuida"></div>
-  <div class="barra">
-    <button id="tSx" aria-label="Ruota a sinistra">◀</button>
-    <button id="tFine">Fine</button>
-    <button id="tAllinea" class="primario">Allinea</button>
-    <button id="tDx" aria-label="Ruota a destra">▶</button>
+  <div id="tAlto">
+    <div id="tStato"></div>
+    <div id="tMsg" hidden></div>
   </div>
-  <div class="barra piccola">
-    <button id="tBersaglio">Bersaglio</button>
-    <button id="tEtichette" class="on">Etichette</button>
-    <button id="tFantasmi">Nascoste</button>
-    <button id="tEsci">Esci</button>
-  </div>
-  <div class="barra piccola solo-cam">
-    <button id="tCampoMeno">Campo −</button>
-    <span id="tCampo" class="valore">67°</span>
-    <button id="tCampoPiu">Campo +</button>
-    <button id="tBussola">Bussola</button>
-    <button id="tDuePunti">2 punti</button>
-  </div>
-  <div class="barra piccola" id="tBarraTar">
-    <button id="tTarAnnulla">Annulla</button>
-    <button id="tTarB">Bersaglio B</button>
-    <button id="tTarApplica" class="primario">Applica</button>
+
+  <div id="tBasso">
+    <div id="tPannello" hidden>
+      <div class="griglia3">
+        <button id="tBersaglio">Bersaglio ▼</button>
+        <button id="tDuePunti">Taratura 2 punti</button>
+        <button id="tBussola" class="solo-cam">Bussola</button>
+        <button id="tCampoMeno" class="solo-cam">Campo −</button>
+        <span id="tCampo" class="valore solo-cam">67°</span>
+        <button id="tCampoPiu" class="solo-cam">Campo +</button>
+        <button id="tEtichette" class="on">Etichette</button>
+        <button id="tFantasmi">Nascoste</button>
+        <button id="tEsci">Esci</button>
+      </div>
+      <div id="tDiag"></div>
+    </div>
+    <div class="barra" id="tBarra">
+      <button id="tSx" aria-label="Ruota a sinistra">◀</button>
+      <button id="tAllinea" class="primario">Allinea</button>
+      <button id="tDx" aria-label="Ruota a destra">▶</button>
+      <button id="tMenu" aria-label="Altri comandi">☰</button>
+    </div>
+    <div class="barra" id="tBarraTar">
+      <button id="tTarAnnulla">Annulla</button>
+      <button id="tTarB">Cambia B</button>
+      <button id="tTarApplica" class="primario">Applica</button>
+    </div>
+    <div id="tEsito" hidden></div>
   </div>
 </div>
-<script type="module" src="js/main.js?v=202610260801"></script>
+<script type="module" src="js/main.js?v=202610260811"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 // Calcola sul telefono ciò che il plugin precalcola per i punti di scatto fissi:
 // quota del punto, profilo d'orizzonte, metri visibili di ogni turbina, riferimenti.
 // Stesse formule di core/export_campo_ar.py (curvatura + rifrazione, k = 0,13).
-import { azDist, abbassamento, rad, deg, norm360, H_OCCHIO } from './geo.js?v=202610260801';
+import { azDist, abbassamento, rad, deg, norm360, H_OCCHIO } from './geo.js?v=202610260811';
 
 const RAGGIO = 25000, PASSO_AZ = 0.5, D_MIN_RIF = 50;
 

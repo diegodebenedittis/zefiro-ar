@@ -3,7 +3,7 @@
 // Noto l'angolo vero fra A e B (azimut + elevazione dai dati) e la loro posizione in pixel,
 // si ricavano insieme: focale → campo visivo, e orientamento (rotazione del mondo).
 import * as THREE from 'three';
-import { rad, deg, norm360, yawDiVettore } from './geo.js?v=202610260801';
+import { rad, deg, norm360, yawDiVettore } from './geo.js?v=202610260811';
 
 const ANG_MIN = 3;       // gradi: sotto, i due bersagli sono troppo vicini per tarare il campo
 
@@ -35,10 +35,10 @@ export function creaTaratura(svg, cam, cb) {
   function calcola() {
     const bb = cb.bersagli(), A = bb[iA], B = bb[iBt];
     const vera = versore(A.az, A.el ?? 0).angleTo(versore(B.az, B.el ?? 0));
-    if (deg(vera) < ANG_MIN) { ris = { errore: `bersagli troppo vicini (${deg(vera).toFixed(1)}°): scegline due più distanti` }; return; }
+    if (deg(vera) < ANG_MIN) { ris = { errore: `A e B troppo vicini (${deg(vera).toFixed(1)}°): Cambia B` }; return; }
     const rA = q => new THREE.Vector3(pA[0] - innerWidth / 2, innerHeight / 2 - pA[1], -q);
     const rB = q => new THREE.Vector3(pB[0] - innerWidth / 2, innerHeight / 2 - pB[1], -q);
-    if (Math.hypot(pA[0] - pB[0], pA[1] - pB[1]) < 30) { ris = { errore: 'i due punti toccati sono troppo vicini' }; return; }
+    if (Math.hypot(pA[0] - pB[0], pA[1] - pB[1]) < 30) { ris = { errore: 'punti toccati troppo vicini' }; return; }
     // l'angolo fra i raggi decresce con la focale: bisezione
     let lo = 20, hi = 50000;
     for (let i = 0; i < 80; i++) {
@@ -47,7 +47,7 @@ export function creaTaratura(svg, cam, cb) {
     }
     const f = Math.sqrt(lo * hi);
     const fovV = 2 * deg(Math.atan((innerHeight / 2) / f));
-    if (fovV < 15 || fovV > 120) { ris = { errore: `risultato non plausibile (campo ${fovV.toFixed(0)}°): ritocca i punti` }; return; }
+    if (fovV < 15 || fovV > 120) { ris = { errore: `campo ${fovV.toFixed(0)}° non plausibile: ritocca i punti` }; return; }
     // orientamento: per ciascun bersaglio, rotazione che porta il suo azimut vero sul raggio toccato
     const wA = raggio(pA, f), wB = raggio(pB, f);
     const tA = yawDiVettore(wA) + rad(A.az), tB = yawDiVettore(wB) + rad(B.az);
@@ -90,12 +90,16 @@ export function creaTaratura(svg, cam, cb) {
     },
     guida() {
       const bb = cb.bersagli();
-      if (fase === 'A') return `Taratura · tocca sullo schermo il punto reale di «${bb[iA].nome}»`;
-      if (fase === 'B') return `Ora tocca «${bb[iBt].nome}» (Bersaglio = scegline un altro)`;
-      if (!ris) return '';
-      if (ris.errore) return 'Taratura: ' + ris.errore;
-      return `Campo ${ris.fovV.toFixed(1)}° vert. · angolo A–B ${ris.ang.toFixed(2)}° · Δ elev ${ris.dEl.toFixed(2)}°` +
-        (Math.abs(ris.dTheta) > 0.3 ? ` · incoerenza ${ris.dTheta.toFixed(2)}° (telefono storto?)` : '') + ' · Applica';
+      if (fase === 'A') return `Tocca il punto reale di «${bb[iA].nome}» (A)`;
+      if (fase === 'B') return `Tocca «${bb[iBt].nome}» (B)`;
+      return '';
+    },
+    // risultato compatto, mostrato sopra la barra della taratura
+    esito() {
+      if (fase !== 'pronto' || !ris) return '';
+      if (ris.errore) return ris.errore;
+      return `Campo ${ris.fovV.toFixed(1)}° · A–B ${ris.ang.toFixed(1)}° · Δ elev ${ris.dEl.toFixed(2)}°` +
+        (Math.abs(ris.dTheta) > 0.3 ? ` · telefono storto (${ris.dTheta.toFixed(1)}°)?` : '');
     },
     applica() {
       if (!ris || ris.errore) { cb.messaggio('Tocca prima i due bersagli'); return false; }
