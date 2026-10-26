@@ -1,13 +1,14 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610260753';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610260753';
-import { creaControlli } from './controlli.js?v=202610260753';
-import { creaHud } from './hud.js?v=202610260753';
-import { creaTouch } from './touch.js?v=202610260753';
-import { creaFotocamera } from './fotocamera.js?v=202610260753';
-import { creaGps } from './gps.js?v=202610260753';
-import { decodificaTerreno, puntoLibero } from './terreno.js?v=202610260753';
-import { deg, VERSIONE } from './geo.js?v=202610260753';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610260801';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610260801';
+import { creaControlli } from './controlli.js?v=202610260801';
+import { creaHud } from './hud.js?v=202610260801';
+import { creaTouch } from './touch.js?v=202610260801';
+import { creaFotocamera } from './fotocamera.js?v=202610260801';
+import { creaGps } from './gps.js?v=202610260801';
+import { decodificaTerreno, puntoLibero } from './terreno.js?v=202610260801';
+import { creaTaratura } from './taratura.js?v=202610260801';
+import { deg, VERSIONE } from './geo.js?v=202610260801';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -51,6 +52,13 @@ const azioni = {
     const s = renderer.xr.getSession();
     if (s) s.end(); else { cam.ferma(); location.reload(); }
   },
+  taratura(cmd) {
+    if (cmd === 'avvia') tar.avvia(stato.iB);
+    else if (cmd === 'annulla') tar.annulla();
+    else if (cmd === 'cambiaB') tar.cambiaB();
+    else if (cmd === 'applica') tar.applica();
+    document.body.classList.toggle('taratura', tar.attiva);
+  },
   bussola() {
     const h = cam.bussola;
     if (h == null) { avviso = { testo: 'Bussola non disponibile su questo telefono/browser', fino: performance.now() + 2500 }; return; }
@@ -66,7 +74,19 @@ const azioni = {
 };
 const cam = creaFotocamera($('video'), camera);
 const gps = creaGps(() => aggiornaInfo());
-let terreno = null;                          // terreno compatto decodificato (punti liberi)
+let terreno = null;
+const tar = creaTaratura($('tTar'), cam, {
+  bersagli: () => mondoAttivo?.bersagli ?? [],
+  messaggio: t => { avviso = { testo: t, fino: performance.now() + 2500 }; },
+  applica: r => {
+    stato.theta = r.theta;
+    cam.impostaFovVerticale(r.fovV);
+    touch.campo(cam.fov);
+    avviso = { testo: `Tarato: campo ${cam.fov.toFixed(1)}°, orientamento corretto (Δ elev ${r.dEl.toFixed(2)}°)`, fino: performance.now() + 3500 };
+  }
+});
+// taratura: i tocchi sull'immagine congelata segnano i bersagli reali
+renderer.domElement.addEventListener('pointerdown', e => { if (tar.attiva) tar.tocco(e.clientX, e.clientY); });                          // terreno compatto decodificato (punti liberi)
 const touch = creaTouch($('touch'), azioni);
 const ctrl = creaControlli(renderer, camera, stato, azioni, touch);
 
@@ -227,6 +247,7 @@ $('entra').addEventListener('click', async () => {
 
 // ---------- ciclo
 function guida(b) {
+  if (tar.attiva) return tar.guida();
   if (avviso && performance.now() < avviso.fino) return avviso.testo;
   if (stato.sensori && !tracciato) return 'In attesa dei sensori di orientamento… muovi il telefono';
   if (stato.sensori && cam.fermo) return 'Sensori di orientamento fermi: il browser non li fornisce';

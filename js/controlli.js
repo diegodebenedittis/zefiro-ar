@@ -1,6 +1,6 @@
 // Zefiro AR – comandi: controller Quest, pulsanti a schermo (telefono), tastiera/mouse (anteprima)
 import * as THREE from 'three';
-import { rad, deg, norm360, norm180, yawDiVettore } from './geo.js?v=202610260753';
+import { rad, deg, norm360, norm180, yawDiVettore } from './geo.js?v=202610260801';
 
 const V_NORM = 3, V_FINE = 0.2, ZONA_MORTA = 0.15;   // °/s
 

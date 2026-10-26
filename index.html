@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Zefiro AR</title>
-<link rel="stylesheet" href="css/stile.css?v=202610260753">
+<link rel="stylesheet" href="css/stile.css?v=202610260801">
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
 </script>
@@ -59,6 +59,7 @@
       <li><b>Modalità fotocamera</b> (consigliata): funziona su quasi tutti i telefoni, anche iPhone; concedi fotocamera e sensori</li>
       <li><b>📍 Posizione attuale</b> (nel menu Punto di vista): usa il GPS del telefono; quota, skyline e parti nascoste vengono calcolate sul posto dal terreno esportato dal plugin</li>
       <li><b>Bussola</b>: orienta la scena con la bussola del telefono (±5–10°, disturbata da metalli e auto); all'avvio viene usata da sola se disponibile; poi rifinisci con Allinea</li>
+      <li><b>2 punti</b> (taratura consigliata): l'immagine si ferma; tocca il primo bersaglio reale (azzurro) e poi il secondo (verde): campo visivo e orientamento vengono calcolati insieme · <b>Applica</b>. Scegli due bersagli ben separati (≥ 10°) e ben riconoscibili</li>
       <li><b>Campo − / +</b>: taratura del campo visivo della fotocamera (una volta per telefono): una turbina o un oggetto noto deve avere l'altezza giusta</li>
       <li>Entra in AR (WebXR): solo Chrome per Android con Google Play Services for AR, non su tutti i modelli</li>
       <li><b>◀ ▶</b> tenuti premuti: ruotano la scena (3°/s; con <b>Fine</b> attivo 0,2°/s)</li>
@@ -74,6 +75,11 @@
 <!-- comandi a schermo (telefono): radice del DOM overlay WebXR -->
 <div id="touch" hidden>
   <div id="tMirino"></div>
+  <svg id="tTar" hidden>
+    <line id="tarLinea" stroke="#ffd400" stroke-width="3" stroke-dasharray="10 6"/>
+    <circle id="tarA" r="14" fill="none" stroke="#00e5ff" stroke-width="3"/>
+    <circle id="tarB" r="14" fill="none" stroke="#7CFC00" stroke-width="3"/>
+  </svg>
   <pre id="tHud"></pre>
   <div id="tGuida"></div>
   <div class="barra">
@@ -93,8 +99,14 @@
     <span id="tCampo" class="valore">67°</span>
     <button id="tCampoPiu">Campo +</button>
     <button id="tBussola">Bussola</button>
+    <button id="tDuePunti">2 punti</button>
+  </div>
+  <div class="barra piccola" id="tBarraTar">
+    <button id="tTarAnnulla">Annulla</button>
+    <button id="tTarB">Bersaglio B</button>
+    <button id="tTarApplica" class="primario">Applica</button>
   </div>
 </div>
-<script type="module" src="js/main.js?v=202610260753"></script>
+<script type="module" src="js/main.js?v=202610260801"></script>
 </body>
 </html>

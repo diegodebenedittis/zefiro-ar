@@ -53,3 +53,11 @@ body.modo-cam { background:#000; }
 #tMirino::before, #tMirino::after { content:''; position:absolute; background:#ff3030; }
 #tMirino::before { left:50%; top:-14px; width:2px; height:56px; margin-left:-1px; }
 #tMirino::after { top:50%; left:-14px; height:2px; width:56px; margin-top:-1px; }
+/* taratura a 2 punti */
+#tTar { position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:12; }
+#tTar[hidden] { display:none; }
+#tBarraTar { display:none !important; }
+body.taratura #tBarraTar { display:flex !important; }
+body.taratura #touch .barra:not(#tBarraTar) { display:none !important; }
+body.taratura #tMirino { display:none; }
+body.taratura #tBarraTar { margin-top:auto; }

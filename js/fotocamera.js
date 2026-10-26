@@ -14,7 +14,7 @@ function leggiFov() {
 }
 
 export function creaFotocamera(video, camera) {
-  let stream = null, ultimo = 0, attivo = false, primo = true;
+  let stream = null, ultimo = 0, attivo = false, primo = true, bloccato = false;
   let fovLungo = leggiFov();
   const q = new THREE.Quaternion(), qT = new THREE.Quaternion(), eul = new THREE.Euler();
   const q0 = new THREE.Quaternion(), zee = new THREE.Vector3(0, 0, 1);
@@ -86,7 +86,7 @@ export function creaFotocamera(video, camera) {
     },
     // da chiamare a ogni frame prima del rendering
     aggiorna() {
-      if (!attivo || !ultimo) return;
+      if (!attivo || !ultimo || bloccato) return;
       if (primo) { q.copy(qT); primo = false; } else q.slerp(qT, 0.35);   // smorza il tremolio
       camera.quaternion.copy(q);
     },
@@ -99,6 +99,22 @@ export function creaFotocamera(video, camera) {
     get pronto() { return attivo && ultimo > 0; },
     get fermo() { return attivo && ultimo > 0 && performance.now() - ultimo > 2000; },
     get fov() { return fovLungo; },
+    // congela fotogramma e orientamento (taratura); restituisce l'orientamento congelato
+    blocca(v) {
+      bloccato = v;
+      if (v) video.pause(); else video.play().catch(() => {});
+      return camera.quaternion.clone();
+    },
+    // imposta il campo visivo dal valore verticale misurato sullo schermo (gradi)
+    impostaFovVerticale(fv) {
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (!vw || !vh) return;
+      const s = Math.max(innerWidth / vw, innerHeight / vh);
+      const fVid = ((innerHeight / 2) / Math.tan(fv * DEG / 2)) / s;
+      fovLungo = Math.round(2 * Math.atan((Math.max(vw, vh) / 2) / fVid) / DEG * 10) / 10;
+      try { localStorage.setItem(CHIAVE_FOV, fovLungo); } catch { /* memoria non disponibile */ }
+      aggiornaFov();
+    },
     regolaFov(d) {
       fovLungo = Math.min(120, Math.max(20, Math.round((fovLungo + d) * 10) / 10));
       try { localStorage.setItem(CHIAVE_FOV, fovLungo); } catch { /* memoria non disponibile */ }

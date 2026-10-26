@@ -17,6 +17,10 @@ export function creaTouch(root, azioni) {
   q('#tFantasmi').addEventListener('click', e => e.currentTarget.classList.toggle('on', azioni.fantasmi()));
   q('#tEsci').addEventListener('click', () => azioni.esci());
   q('#tBussola').addEventListener('click', () => azioni.bussola());
+  q('#tDuePunti').addEventListener('click', () => azioni.taratura('avvia'));
+  q('#tTarAnnulla').addEventListener('click', () => azioni.taratura('annulla'));
+  q('#tTarB').addEventListener('click', () => azioni.taratura('cambiaB'));
+  q('#tTarApplica').addEventListener('click', () => azioni.taratura('applica'));
   // Campo −/+: 1° per tocco; tenendo premuto ripete sempre più veloce
   for (const [sel, d] of [['#tCampoMeno', -1], ['#tCampoPiu', 1]]) {
     const b = q(sel);
