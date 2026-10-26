@@ -1,14 +1,14 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610260839';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610260839';
-import { creaControlli } from './controlli.js?v=202610260839';
-import { creaHud } from './hud.js?v=202610260839';
-import { creaTouch } from './touch.js?v=202610260839';
-import { creaFotocamera } from './fotocamera.js?v=202610260839';
-import { creaGps } from './gps.js?v=202610260839';
-import { decodificaTerreno, puntoLibero } from './terreno.js?v=202610260839';
-import { creaTaratura } from './taratura.js?v=202610260839';
-import { deg, VERSIONE } from './geo.js?v=202610260839';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610261356';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610261356';
+import { creaControlli } from './controlli.js?v=202610261356';
+import { creaHud } from './hud.js?v=202610261356';
+import { creaTouch } from './touch.js?v=202610261356';
+import { creaFotocamera } from './fotocamera.js?v=202610261356';
+import { creaGps } from './gps.js?v=202610261356';
+import { decodificaTerreno, puntoLibero } from './terreno.js?v=202610261356';
+import { creaTaratura } from './taratura.js?v=202610261356';
+import { deg, VERSIONE } from './geo.js?v=202610261356';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -59,6 +59,10 @@ const azioni = {
     else if (cmd === 'applica') tar.applica();
     document.body.classList.toggle('taratura', tar.attiva);
   },
+  alzo(d) {
+    if (d === null) cam.azzeraAlzo(); else cam.regolaAlzo(d);
+    avviso = { testo: `▲▼ ${cam.alzo >= 0 ? '+' : ''}${cam.alzo.toFixed(2)}°`, fino: performance.now() + 1200 };
+  },
   scatto(gradi) { stato.theta += gradi * Math.PI / 180; },
   bussola() {
     const h = cam.bussola;
@@ -82,8 +86,9 @@ const tar = creaTaratura($('tTar'), cam, {
   applica: r => {
     stato.theta = r.theta;
     cam.impostaFovVerticale(r.fovV);
+    cam.regolaAlzo(r.dEl);                        // corregge anche l'inclinazione del sensore
     touch.campo(cam.fov);
-    avviso = { testo: `Tarato: campo ${cam.fov.toFixed(1)}° · Δ elev ${r.dEl.toFixed(2)}°`, fino: performance.now() + 3500 };
+    avviso = { testo: `Tarato: campo ${cam.fov.toFixed(1)}° · ▲▼ ${cam.alzo.toFixed(2)}°`, fino: performance.now() + 3500 };
   }
 });
 // taratura: i tocchi sull'immagine congelata segnano i bersagli reali
@@ -301,7 +306,8 @@ renderer.setAnimationLoop((t, frame) => {
       touch.orienta(camera.quaternion);
       const sc = b ? ctrl.scarto(b.az) : 0;
       touch.testo(
-        `${mondoAttivo.punto.id} · ${ctrl.azTesta().toFixed(1)}°N` + (b ? ` · ▼ ${b.nome} Δ ${sc.toFixed(2)}°` : ''),
+        `${mondoAttivo.punto.id} · ${ctrl.azTesta().toFixed(1)}°N` + (b ? ` · ▼ ${b.nome} Δ ${sc.toFixed(2)}°` : '') +
+          (stato.sensori && cam.alzo ? ` · ▲▼ ${cam.alzo > 0 ? '+' : ''}${cam.alzo.toFixed(2)}°` : ''),
         righe[0],
         [righe[1], righe[2], righe[4]].join('\n'),
         tar.attiva ? tar.esito() : '');

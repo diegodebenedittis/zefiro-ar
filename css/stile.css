@@ -40,6 +40,11 @@ details { margin-top:1.5em; color:var(--mut); }
 #touch button:active { background:rgba(255,212,0,.45); }
 #touch button.on { background:rgba(255,212,0,.85); color:#111; border-color:transparent; }
 #touch button.primario { background:rgba(255,48,48,.75); border-color:transparent; }
+/* ▲ ▼: colonna sul lato destro, sopra la barra (solo modalità fotocamera) */
+#tVert { position:absolute; right:8px; bottom:84px; flex-direction:column; width:56px; display:none; }
+body.modo-cam #tVert { display:flex; }
+#touch #tVert button { flex:none; padding:14px 0; font-size:18px; }
+body.taratura #tVert, body.menu-aperto #tVert { display:none !important; }
 #tPannello { pointer-events:auto; background:rgba(14,18,22,.82); border-radius:14px; padding:8px; }
 #tPannello[hidden] { display:none; }
 .griglia3 { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }

@@ -46,6 +46,21 @@ export function creaTouch(root, azioni) {
     for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, stop);
   }
 
+  // ▲ ▼: 0,05° per tocco; tenendo premuto ripete e accelera
+  for (const [sel, d] of [['#tSu', 1], ['#tGiu', -1]]) {
+    const b = q(sel);
+    let timer = null;
+    const stop = () => { clearTimeout(timer); timer = null; };
+    b.addEventListener('pointerdown', e => {
+      e.preventDefault(); b.setPointerCapture(e.pointerId);
+      let n = 0;
+      const passo = () => { azioni.alzo(d * (n > 10 ? 0.2 : 0.05)); n++; timer = setTimeout(passo, n < 2 ? 400 : 100); };
+      passo();
+    });
+    for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, stop);
+  }
+  q('#tAzzeraAlzo').addEventListener('click', () => azioni.alzo(null));
+
   // barra della taratura
   q('#tTarAnnulla').addEventListener('click', () => azioni.taratura('annulla'));
   q('#tTarB').addEventListener('click', () => azioni.taratura('cambiaB'));
@@ -54,7 +69,10 @@ export function creaTouch(root, azioni) {
   // i tocchi sui pulsanti non devono diventare "select" della sessione XR
   root.addEventListener('beforexrselect', e => e.preventDefault());
 
-  function mostraMenu(v) { menu = v; q('#tPannello').hidden = !v; q('#tMenu').classList.toggle('on', v); }
+  function mostraMenu(v) {
+    menu = v; q('#tPannello').hidden = !v; q('#tMenu').classList.toggle('on', v);
+    document.body.classList.toggle('menu-aperto', v);
+  }
 
   // rotazione dei comandi secondo la gravità (telefono ruotato con la rotazione schermo bloccata)
   const ui = q('#tUI');

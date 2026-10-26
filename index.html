@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Zefiro AR</title>
-<link rel="stylesheet" href="css/stile.css?v=202610260839">
+<link rel="stylesheet" href="css/stile.css?v=202610261356">
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
 </script>
@@ -59,6 +59,7 @@
       <li><b>Modalità fotocamera</b> (consigliata): quasi tutti i telefoni, anche iPhone; concedi fotocamera e sensori. All'avvio si orienta con la bussola (±5–10°)</li>
       <li><b>📍 Posizione attuale</b> (menu Punto di vista): usa il GPS; quota, skyline e parti nascoste calcolate sul posto</li>
       <li><b>◀ ▶</b>: tocco = 0,1°; tenuti premuti ruotano sempre più veloci · <b>Allinea</b>: il bersaglio ▼ va al centro del mirino</li>
+      <li><b>▲ ▼</b> (a destra): alzano/abbassano la scena per correggere l'inclinazione del sensore; tocco = 0,05°, tenuti premuti ripetono. La taratura a 2 punti la imposta da sola; valore salvato sul telefono · Azzera ▲▼ nel menu</li>
       <li><b>☰</b>: Bersaglio (cambia ▼), <b>Taratura 2 punti</b>, Bussola, Campo −/+, Etichette, Nascoste, Esci</li>
       <li><b>Taratura 2 punti</b>: l'immagine si ferma; tocca il bersaglio reale A (azzurro) e poi B (verde), lontani fra loro ≥ 10° · Applica: campo visivo e orientamento insieme</li>
       <li>Entra in AR (WebXR): solo Chrome per Android con ARCore, non su tutti i modelli</li>
@@ -82,6 +83,11 @@
     <div id="tMsg" hidden></div>
   </div>
 
+  <div id="tVert" class="barra">
+    <button id="tSu" aria-label="Alza la scena">▲</button>
+    <button id="tGiu" aria-label="Abbassa la scena">▼</button>
+  </div>
+
   <div id="tBasso">
     <div id="tPannello" hidden>
       <div class="griglia3">
@@ -93,6 +99,8 @@
         <button id="tCampoPiu" class="solo-cam">Campo +</button>
         <button id="tEtichette" class="on">Etichette</button>
         <button id="tFantasmi">Nascoste</button>
+        <button id="tAzzeraAlzo" class="solo-cam">Azzera ▲▼</button>
+        <span class="solo-cam"></span>
         <button id="tEsci">Esci</button>
       </div>
       <div id="tDiag"></div>
@@ -112,6 +120,6 @@
   </div>
   </div>
 </div>
-<script type="module" src="js/main.js?v=202610260839"></script>
+<script type="module" src="js/main.js?v=202610261356"></script>
 </body>
 </html>

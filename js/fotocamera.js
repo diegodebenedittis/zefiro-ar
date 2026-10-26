@@ -7,6 +7,7 @@ import * as THREE from 'three';
 
 const DEG = Math.PI / 180;
 const CHIAVE_FOV = 'zefiroAR.fov';
+const CHIAVE_ALZO = 'zefiroAR.alzo';     // correzione verticale (gradi): errore d'inclinazione del sensore
 const FOV_DEFAULT = 67;      // campo visivo sul lato lungo, obiettivo principale ~26 mm eq.
 
 function leggiFov() {
@@ -16,6 +17,10 @@ function leggiFov() {
 export function creaFotocamera(video, camera) {
   let stream = null, ultimo = 0, attivo = false, primo = true, bloccato = false;
   let fovLungo = leggiFov();
+  let alzo = 0;
+  try { alzo = +localStorage.getItem(CHIAVE_ALZO) || 0; } catch { /* memoria non disponibile */ }
+  const qAlzo = new THREE.Quaternion(), asseX = new THREE.Vector3(1, 0, 0);
+  const salvaAlzo = () => { try { localStorage.setItem(CHIAVE_ALZO, alzo); } catch { /* */ } };
   const q = new THREE.Quaternion(), qT = new THREE.Quaternion(), eul = new THREE.Euler();
   const q0 = new THREE.Quaternion(), zee = new THREE.Vector3(0, 0, 1);
   const q1 = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));   // camera verso il retro
@@ -89,6 +94,8 @@ export function creaFotocamera(video, camera) {
       if (!attivo || !ultimo || bloccato) return;
       if (primo) { q.copy(qT); primo = false; } else q.slerp(qT, 0.35);   // smorza il tremolio
       camera.quaternion.copy(q);
+      // alzo > 0: la scena sale (la fotocamera virtuale si inclina verso il basso)
+      if (alzo) camera.quaternion.multiply(qAlzo.setFromAxisAngle(asseX, -alzo * DEG));
     },
     // direzione magnetica media della fotocamera (gradi) o null se la bussola non risponde
     get bussola() {
@@ -99,6 +106,9 @@ export function creaFotocamera(video, camera) {
     get pronto() { return attivo && ultimo > 0; },
     get fermo() { return attivo && ultimo > 0 && performance.now() - ultimo > 2000; },
     get fov() { return fovLungo; },
+    get alzo() { return alzo; },
+    regolaAlzo(d) { alzo = Math.max(-10, Math.min(10, Math.round((alzo + d) * 100) / 100)); salvaAlzo(); },
+    azzeraAlzo() { alzo = 0; salvaAlzo(); },
     // congela fotogramma e orientamento (taratura); restituisce l'orientamento congelato
     blocca(v) {
       bloccato = v;

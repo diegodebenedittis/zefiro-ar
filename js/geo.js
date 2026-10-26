@@ -1,5 +1,5 @@
 // Zefiro AR – geometria: azimut/distanze, curvatura, compressione distanze
-export const VERSIONE = '202610260839';
+export const VERSIONE = '202610261356';
 export const R_TERRA = 6371000;
 export const K_RIFR = 0.13;      // coefficiente di rifrazione standard
 export const H_OCCHIO = 1.6;     // quota occhio sul terreno (m)
