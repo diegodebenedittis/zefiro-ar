@@ -56,6 +56,23 @@ export function creaTouch(root, azioni) {
 
   function mostraMenu(v) { menu = v; q('#tPannello').hidden = !v; q('#tMenu').classList.toggle('on', v); }
 
+  // rotazione dei comandi secondo la gravità (telefono ruotato con la rotazione schermo bloccata)
+  const ui = q('#tUI');
+  let angoloUI = 0;
+  function orienta(qc) {
+    // direzione "giù" del mondo nelle coordinate della fotocamera: v = q* · (0,-1,0) · q
+    const { x, y, z, w } = qc;
+    const vx = -(2 * (x * y + w * z)), vy = -(1 - 2 * (x * x + z * z));    // colonna y della matrice di q, trasposta
+    if (Math.hypot(vx, vy) < 0.5) return;                                 // telefono quasi orizzontale: non cambiare
+    const a = Math.atan2(-vx, -vy) * 180 / Math.PI;                        // gradi, rotazione CSS (oraria)
+    const scatto = Math.round(a / 90) * 90;
+    const diff = Math.abs(((a - angoloUI + 540) % 360) - 180);
+    if (scatto % 360 === angoloUI % 360 || diff < 55) return;              // isteresi
+    angoloUI = ((scatto % 360) + 360) % 360;
+    ui.classList.toggle('laterale', angoloUI === 90 || angoloUI === 270);
+    ui.style.transform = `translate(-50%, -50%) rotate(${angoloUI}deg)`;
+  }
+
   const stato = q('#tStato'), msg = q('#tMsg'), diag = q('#tDiag'), esito = q('#tEsito');
   let ultimo = '';
   return {
@@ -74,6 +91,7 @@ export function creaTouch(root, azioni) {
       diag.textContent = diagnostica || '';
       esito.textContent = risultato || ''; esito.hidden = !risultato;
     },
+    orienta,
     mostra(v) { root.hidden = !v; if (!v) { dir = 0; mostraMenu(false); } },
     campo(valore) { q('#tCampo').textContent = valore.toFixed(1) + '°'; }
   };

@@ -1,14 +1,14 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610260811';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610260811';
-import { creaControlli } from './controlli.js?v=202610260811';
-import { creaHud } from './hud.js?v=202610260811';
-import { creaTouch } from './touch.js?v=202610260811';
-import { creaFotocamera } from './fotocamera.js?v=202610260811';
-import { creaGps } from './gps.js?v=202610260811';
-import { decodificaTerreno, puntoLibero } from './terreno.js?v=202610260811';
-import { creaTaratura } from './taratura.js?v=202610260811';
-import { deg, VERSIONE } from './geo.js?v=202610260811';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610260839';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610260839';
+import { creaControlli } from './controlli.js?v=202610260839';
+import { creaHud } from './hud.js?v=202610260839';
+import { creaTouch } from './touch.js?v=202610260839';
+import { creaFotocamera } from './fotocamera.js?v=202610260839';
+import { creaGps } from './gps.js?v=202610260839';
+import { decodificaTerreno, puntoLibero } from './terreno.js?v=202610260839';
+import { creaTaratura } from './taratura.js?v=202610260839';
+import { deg, VERSIONE } from './geo.js?v=202610260839';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -298,6 +298,7 @@ renderer.setAnimationLoop((t, frame) => {
       `${diag} · disegnati ${renderer.info.render.calls} · v${VERSIONE.slice(-4)}`
     ];
     if (modoTouch) {
+      touch.orienta(camera.quaternion);
       const sc = b ? ctrl.scarto(b.az) : 0;
       touch.testo(
         `${mondoAttivo.punto.id} · ${ctrl.azTesta().toFixed(1)}°N` + (b ? ` · ▼ ${b.nome} Δ ${sc.toFixed(2)}°` : ''),

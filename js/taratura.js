@@ -3,7 +3,7 @@
 // Noto l'angolo vero fra A e B (azimut + elevazione dai dati) e la loro posizione in pixel,
 // si ricavano insieme: focale → campo visivo, e orientamento (rotazione del mondo).
 import * as THREE from 'three';
-import { rad, deg, norm360, yawDiVettore } from './geo.js?v=202610260811';
+import { rad, deg, norm360, yawDiVettore } from './geo.js?v=202610260839';
 
 const ANG_MIN = 3;       // gradi: sotto, i due bersagli sono troppo vicini per tarare il campo
 
