@@ -24,6 +24,8 @@ export function creaTouch(root, azioni) {
   }
   q('#tAllinea').addEventListener('click', () => azioni.allinea());
   q('#tMenu').addEventListener('click', () => mostraMenu(!menu));
+  q('#tScatta').addEventListener('click', () => { mostraMenu(false); azioni.scatta(); });
+  q('#tPulito').addEventListener('click', e => { e.currentTarget.classList.toggle('on', azioni.pulito()); mostraMenu(false); });
 
   // pannello ☰: le azioni "una tantum" chiudono il pannello, Campo −/+ e Bersaglio no
   const chiudi = f => () => { f(); mostraMenu(false); };

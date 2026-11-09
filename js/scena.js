@@ -1,8 +1,8 @@
 // Zefiro AR – renderer, mondo, turbine, skyline DTM, riferimenti
 import * as THREE from 'three';
-import { distanzaScena, dirDaAz, rad, deg, H_OCCHIO } from './geo.js?v=202610261356';
-import { creaTurbina } from './turbina.js?v=202610261356';
-import { etichetta, simbolo } from './hud.js?v=202610261356';
+import { distanzaScena, dirDaAz, rad, deg, H_OCCHIO } from './geo.js?v=202611091509';
+import { creaTurbina } from './turbina.js?v=202611091509';
+import { etichetta, simbolo } from './hud.js?v=202611091509';
 
 const R_SKY = 470;   // raggio della skyline e dei marker (solo direzione)
 
@@ -64,7 +64,7 @@ function svuota(g) {
 
 export function popolaMondo(mondo, punto, turbine) {
   svuota(mondo);
-  const rotori = [], fantasmi = [], etichette = [], bersagli = [], piani = [];
+  const rotori = [], fantasmi = [], etichette = [], aiuti = [], bersagli = [], piani = [];  // aiuti: skyline, tacche, cardinali, riferimenti
 
   for (const t of turbine) {
     const dS = distanzaScena(t.dist), s = dS / t.dist;
@@ -98,15 +98,15 @@ export function popolaMondo(mondo, punto, turbine) {
   const o = punto.orizzonte;
   if (o?.elev?.length) {
     const c = o.elev.map((e, i) => [i * o.passo, +e]); c.push([360, +o.elev[0]]);
-    const sky = nastro(c, 0xffd400); mondo.add(sky); etichette.push(sky);
+    const sky = nastro(c, 0xffd400); mondo.add(sky); aiuti.push(sky);
   }
   // Graduazione orizzontale ogni 10° e punti cardinali
   for (let a = 0; a < 360; a += 10) {
     const tick = nastro([[a - 0.05, -0.6], [a + 0.05, -0.6]], 0xffffff, a % 90 ? 0.4 : 1.2, 0.5);
-    mondo.add(tick); etichette.push(tick);
+    mondo.add(tick); aiuti.push(tick);
   }
   [['N', 0], ['E', 90], ['S', 180], ['O', 270]].forEach(([n, a]) => {
-    const e = etichetta(n, puntoSky(a, -2.2), 0.9); mondo.add(e); etichette.push(e);
+    const e = etichetta(n, puntoSky(a, -2.2), 0.9); mondo.add(e); aiuti.push(e);
   });
   // Riferimenti noti (metodo A): [{nome, az, elev?}]
   // Riferimenti noti (metodo A): [{nome, az, elev, dist, visibile}] dal plugin.
@@ -119,7 +119,7 @@ export function popolaMondo(mondo, punto, turbine) {
     const tacca = nastro([[r.az - 0.35, el], [r.az + 0.35, el]], col, 0.05, op);
     const km = r.dist ? ` · ${(r.dist / 1000).toFixed(1)} km` : '';
     const e = etichetta(`${r.nome}${km}${vis ? '' : ' (nascosto)'}`, puntoSky(r.az, el + 0.25), 0.55);
-    for (const o of [asta, tacca, e]) { mondo.add(o); etichette.push(o); }
+    for (const o of [asta, tacca, e]) { mondo.add(o); aiuti.push(o); }
     if (vis) bRif.push({ nome: /^rif/i.test(r.nome) ? r.nome : `Rif. ${r.nome}`, az: r.az, tipo: 'r', el });
   }
   bersagli.unshift(...bRif);
@@ -132,7 +132,7 @@ export function popolaMondo(mondo, punto, turbine) {
     freccia.visible = !!b;
     if (b) freccia.position.copy(puntoSky(b.az, (b.el ?? 0) + 0.5));
   };
-  return { rotori, fantasmi, etichette, bersagli, piani, segna };
+  return { rotori, fantasmi, etichette, aiuti, bersagli, piani, segna };
 }
 
 // La scena segue la testa: l'occhio del mondo (0, H_OCCHIO, 0) coincide con la camera.

@@ -75,3 +75,9 @@ body.modo-cam { background:#000; }
 body.taratura #tBarraTar { display:flex !important; }
 body.taratura #tBarra, body.taratura #tPannello { display:none !important; }
 body.taratura #tMirino { display:none; }
+/* scatto: lampo bianco */
+#tFlash { position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:30; transition:opacity .35s; }
+#tFlash.on { opacity:.8; transition:none; }
+#touch #tScatta { flex:0.7; font-size:20px; }
+/* vista pulita: solo turbine ed etichette */
+body.pulito #tMirino, body.pulito #tAlto, body.pulito #tVert { display:none !important; }

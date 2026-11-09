@@ -1,14 +1,15 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202610261356';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202610261356';
-import { creaControlli } from './controlli.js?v=202610261356';
-import { creaHud } from './hud.js?v=202610261356';
-import { creaTouch } from './touch.js?v=202610261356';
-import { creaFotocamera } from './fotocamera.js?v=202610261356';
-import { creaGps } from './gps.js?v=202610261356';
-import { decodificaTerreno, puntoLibero } from './terreno.js?v=202610261356';
-import { creaTaratura } from './taratura.js?v=202610261356';
-import { deg, VERSIONE } from './geo.js?v=202610261356';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202611091509';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202611091509';
+import { creaControlli } from './controlli.js?v=202611091509';
+import { creaHud } from './hud.js?v=202611091509';
+import { creaTouch } from './touch.js?v=202611091509';
+import { creaFotocamera } from './fotocamera.js?v=202611091509';
+import { creaGps } from './gps.js?v=202611091509';
+import { decodificaTerreno, puntoLibero } from './terreno.js?v=202611091509';
+import { creaTaratura } from './taratura.js?v=202611091509';
+import { componi, salva } from './foto.js?v=202611091509';
+import { deg, VERSIONE } from './geo.js?v=202611091509';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -18,6 +19,7 @@ const QUEST = /OculusBrowser|Quest/i.test(navigator.userAgent);
 const MOBILE = !QUEST && (matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad/i.test(navigator.userAgent));
 
 let prog = null, mondoAttivo = null, inizializzato = false, etichetteOn = true, fantasmiOn = false;
+let pulito = false, fotoRichiesta = false;    // vista solo turbine; scatto al prossimo fotogramma
 let modoTouch = false;                       // HUD e comandi a schermo (telefono)
 let tracciato = false, diag = '';            // stato del tracciamento e riga diagnostica
 let avviso = null;                           // messaggio temporaneo nella fascia gialla
@@ -43,6 +45,16 @@ const azioni = {
     hud.visibile = etichetteOn && !modoTouch;
     return etichetteOn;
   },
+  // vista pulita: solo turbine di progetto ed etichette
+  pulito() {
+    pulito = !pulito;
+    document.body.classList.toggle('pulito', pulito);
+    mondoAttivo?.aiuti.forEach(o => o.visible = !pulito);
+    hud.visibile = etichetteOn && !modoTouch && !pulito;
+    if (!modoTouch) hud.mirino = !pulito;
+    return pulito;
+  },
+  scatta() { fotoRichiesta = true; },
   fantasmi() {
     fantasmiOn = !fantasmiOn;
     mondoAttivo?.fantasmi.forEach(f => f.visible = fantasmiOn);
@@ -215,7 +227,8 @@ function preparaScena() {
   const { punto, turbine } = selezione();
   mondoAttivo = popolaMondo(mondo, punto, turbine);
   mondoAttivo.punto = punto; mondoAttivo.azIniziale = punto.baricentro?.az ?? turbine[0]?.az ?? 0;
-  stato.iB = 0; inizializzato = false; tracciato = false; tBussola = 0; fantasmiOn = false; etichetteOn = true;
+  stato.iB = 0; inizializzato = false; tracciato = false; tBussola = 0;
+  pulito = false; document.body.classList.remove('pulito'); $('tPulito').classList.remove('on'); fantasmiOn = false; etichetteOn = true;
   $('tEtichette').classList.add('on'); $('tFantasmi').classList.remove('on');
 }
 
@@ -294,7 +307,7 @@ renderer.setAnimationLoop((t, frame) => {
     seguiTesta(mondo, camera, mondoAttivo.piani);
     for (const r of mondoAttivo.rotori) r.rotation.z -= dt * 2 * Math.PI * 10 / 60;   // 10 giri/min
     const b = mondoAttivo.bersagli[stato.iB];
-    mondoAttivo.segna(b);
+    mondoAttivo.segna(pulito ? null : b);
     const righe = [
       guida(b),
       `${mondoAttivo.punto.id}  ·  vista ${ctrl.azTesta().toFixed(1)}°N  ·  rot. ${deg(stato.theta).toFixed(1)}°`,
@@ -314,4 +327,15 @@ renderer.setAnimationLoop((t, frame) => {
     } else hud.imposta(righe);
   }
   renderer.render(scene, camera);
+  if (fotoRichiesta && mondoAttivo) {              // subito dopo il render: buffer WebGL ancora valido
+    fotoRichiesta = false;
+    const d = new Date();
+    const tela = componi(stato.sensori ? $('video') : null, renderer.domElement,
+      `${prog?.nome ?? 'Zefiro AR'} · ${mondoAttivo.punto.id} ${mondoAttivo.punto.etichetta ?? ''} · direzione ${ctrl.azTesta().toFixed(1)}°N · ` +
+      `${d.toLocaleDateString('it-IT')} ${d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}\n` +
+      'Simulazione indicativa in realtà aumentata – Elaborazione: Zefiro (Poliedra) — ing. Diego De Benedittis');
+    $('tFlash').classList.add('on');
+    setTimeout(() => $('tFlash').classList.remove('on'), 60);
+    salva(tela, mondoAttivo.punto.id).then(n => { avviso = { testo: `Foto salvata: ${n}`, fino: performance.now() + 2500 }; });
+  }
 });
