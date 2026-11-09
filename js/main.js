@@ -1,16 +1,16 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202611091936';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202611091936';
-import { creaControlli } from './controlli.js?v=202611091936';
-import { creaHud } from './hud.js?v=202611091936';
-import { creaTouch } from './touch.js?v=202611091936';
-import { creaFotocamera } from './fotocamera.js?v=202611091936';
-import { creaGps } from './gps.js?v=202611091936';
-import { decodificaTerreno, puntoLibero } from './terreno.js?v=202611091936';
-import { creaTaratura } from './taratura.js?v=202611091936';
-import { componi, salva, copia, nomeBase } from './foto.js?v=202611091936';
-import * as drive from './drive.js?v=202611091936';
-import { deg, VERSIONE } from './geo.js?v=202611091936';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202611092110';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202611092110';
+import { creaControlli } from './controlli.js?v=202611092110';
+import { creaHud } from './hud.js?v=202611092110';
+import { creaTouch } from './touch.js?v=202611092110';
+import { creaFotocamera } from './fotocamera.js?v=202611092110';
+import { creaGps } from './gps.js?v=202611092110';
+import { decodificaTerreno, puntoLibero } from './terreno.js?v=202611092110';
+import { creaTaratura } from './taratura.js?v=202611092110';
+import { componi, salva, copia, nomeBase, ruota, didascalia } from './foto.js?v=202611092110';
+import * as drive from './drive.js?v=202611092110';
+import { deg, VERSIONE } from './geo.js?v=202611092110';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -338,7 +338,8 @@ function scatto() {
   const d = new Date(), M = mondoAttivo, tela = renderer.domElement;
   const video = stato.sensori ? $('video') : null;
   const nome = nomeBase(M.punto.id);
-  const composito = componi(video, tela,
+  const ang = modoTouch ? touch.angolo : 0;               // telefono in orizzontale: foto in orizzontale
+  const composito = didascalia(ruota(componi(video, tela, null), ang),
     `${prog?.nome ?? 'Zefiro AR'} · ${M.punto.id} ${M.punto.etichetta ?? ''} · direzione ${ctrl.azTesta().toFixed(1)}°N · ` +
     `${d.toLocaleDateString('it-IT')} ${d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}\n` +
     'Simulazione indicativa in realtà aumentata – Elaborazione: Zefiro (Poliedra) — ing. Diego De Benedittis');
@@ -351,15 +352,15 @@ function scatto() {
     // turbine (senza etichette, aiuti, freccia, HUD)
     nascondi(M.etichette); nascondi(M.aiuti); nascondi(camera.children); M.segna(null);
     renderer.render(scene, camera);
-    const cTurb = copia(tela);
+    const cTurb = ruota(copia(tela), ang);
     // etichette (solo nomi turbine)
     nascondi(M.gruppi); nascondi(M.fantasmi);
     M.etichette.forEach(o => o.visible = true);
     renderer.render(scene, camera);
-    const cEt = copia(tela);
+    const cEt = ruota(copia(tela), ang);
     tutti.forEach((o, i) => o.visible = vis[i]);
     renderer.render(scene, camera);
-    if (video) file.push([componi(video, document.createElement('canvas'), null, tela.width, tela.height), nome + '_foto', false]);
+    if (video) file.push([ruota(componi(video, document.createElement('canvas'), null, tela.width, tela.height), ang), nome + '_foto', false]);
     file.push([cTurb, nome + '_turbine', true], [cEt, nome + '_etichette', true]);
   }
   $('tFlash').classList.add('on');

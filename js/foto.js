@@ -52,3 +52,38 @@ export function salva(canvas, nome, png = false) {
     ok({ nome: a.download, blob });
   }, png ? 'image/png' : 'image/jpeg', 0.92));
 }
+
+// ruota l'immagine di -angolo (gradi, multipli di 90): telefono tenuto in orizzontale
+export function ruota(c, angolo) {
+  const a = ((angolo % 360) + 360) % 360;
+  if (!a) return c;
+  const r = document.createElement('canvas');
+  const lat = a === 90 || a === 270;
+  r.width = lat ? c.height : c.width; r.height = lat ? c.width : c.height;
+  const g = r.getContext('2d');
+  g.translate(r.width / 2, r.height / 2);
+  g.rotate(-a * Math.PI / 180);
+  g.drawImage(c, -c.width / 2, -c.height / 2);
+  return r;
+}
+
+// didascalia in basso, su più righe se non entra in larghezza
+export function didascalia(c, testo) {
+  const g = c.getContext('2d'), W = c.width, H = c.height;
+  const fs = Math.max(14, Math.round(Math.min(W, H) * 0.022)), pad = Math.round(fs * 0.6);
+  g.font = `600 ${fs}px system-ui, sans-serif`;
+  const righe = [];
+  for (const par of testo.split('\n')) {
+    let riga = '';
+    for (const p of par.split(' ')) {
+      const prova = riga ? riga + ' ' + p : p;
+      if (g.measureText(prova).width > W - 2 * pad && riga) { righe.push(riga); riga = p; } else riga = prova;
+    }
+    righe.push(riga);
+  }
+  const h = righe.length * fs * 1.3 + pad * 2;
+  g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(0, H - h, W, h);
+  g.fillStyle = '#fff'; g.textBaseline = 'top';
+  righe.forEach((r, i) => g.fillText(r, pad, H - h + pad + i * fs * 1.3));
+  return c;
+}

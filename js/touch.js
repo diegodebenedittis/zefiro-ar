@@ -114,6 +114,7 @@ export function creaTouch(root, azioni) {
       esito.textContent = risultato || ''; esito.hidden = !risultato;
     },
     orienta,
+    get angolo() { return angoloUI; },
     mostra(v) { root.hidden = !v; if (!v) { dir = 0; mostraMenu(false); } },
     campo(valore) { q('#tCampo').textContent = valore.toFixed(1) + '°'; }
   };

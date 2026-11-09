@@ -1,8 +1,8 @@
 // Zefiro AR – renderer, mondo, turbine, skyline DTM, riferimenti
 import * as THREE from 'three';
-import { distanzaScena, dirDaAz, rad, deg, H_OCCHIO } from './geo.js?v=202611091936';
-import { creaTurbina } from './turbina.js?v=202611091936';
-import { etichetta, simbolo } from './hud.js?v=202611091936';
+import { distanzaScena, dirDaAz, rad, deg, H_OCCHIO } from './geo.js?v=202611092110';
+import { creaTurbina } from './turbina.js?v=202611092110';
+import { etichetta, simbolo } from './hud.js?v=202611092110';
 
 const R_SKY = 470;   // raggio della skyline e dei marker (solo direzione)
 
@@ -64,7 +64,7 @@ function svuota(g) {
 
 export function popolaMondo(mondo, punto, turbine) {
   svuota(mondo);
-  const gruppi = [], rotori = [], fantasmi = [], etichette = [], aiuti = [], bersagli = [], piani = [];  // aiuti: skyline, tacche, cardinali, riferimenti
+  const daEtichettare = [], gruppi = [], rotori = [], fantasmi = [], etichette = [], aiuti = [], bersagli = [], piani = [];  // aiuti: skyline, tacche, cardinali, riferimenti
 
   for (const t of turbine) {
     const dS = distanzaScena(t.dist), s = dS / t.dist;
@@ -88,10 +88,29 @@ export function popolaMondo(mondo, punto, turbine) {
       mondo.add(gruppo); rotori.push(rotore); gruppi.push(gruppo);
       if (lista) { gruppo.visible = false; lista.push(gruppo); }
     }
-    const e = etichetta(t.id, new THREE.Vector3(dx * dS, yBase + s * t.h * 1.04, dz * dS));
-    mondo.add(e); etichette.push(e);
     const elTop = deg(Math.atan2(yBase + s * t.h - H_OCCHIO, dS));   // elevazione della punta pala
+    daEtichettare.push({ id: t.id, az: t.az, elTop, top: new THREE.Vector3(dx * dS, yBase + s * t.h, dz * dS) });
     bersagli.push({ nome: `Turbina ${t.id}`, az: t.az, tipo: 't', el: elTop });
+  }
+
+  // Etichette a fascia sopra il parco: stessa elevazione per tutte (punta più alta + STACCO),
+  // file sfalsate se troppo vicine in azimut, linea di richiamo sottile fino alla punta pala.
+  const STACCO = 2.2, ALT_ET = 0.7, LARGH = 3.2;            // gradi
+  if (daEtichettare.length) {
+    const base = Math.max(...daEtichettare.map(d => d.elTop)) + STACCO;
+    const file = [];                                        // ultimo azimut occupato per fila
+    for (const d of [...daEtichettare].sort((a, b) => a.az - b.az)) {
+      let k = file.findIndex(az => d.az - az >= LARGH);
+      if (k < 0) { k = file.length; file.push(-1e9); }
+      file[k] = d.az;
+      const el = base + k * ALT_ET * 1.4;
+      const pos = puntoSky(d.az, el);
+      const e = etichetta(d.id, pos, ALT_ET);
+      const g = new THREE.BufferGeometry().setFromPoints([d.top, pos]);
+      const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0xffd400, transparent: true, opacity: 0.7, depthTest: false }));
+      l.renderOrder = 9;
+      mondo.add(e, l); etichette.push(e, l);
+    }
   }
 
   // Skyline del DTM: orizzonte = { passo, elev:[...] } (da azimut 0)
