@@ -1,15 +1,15 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202611091509';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202611091509';
-import { creaControlli } from './controlli.js?v=202611091509';
-import { creaHud } from './hud.js?v=202611091509';
-import { creaTouch } from './touch.js?v=202611091509';
-import { creaFotocamera } from './fotocamera.js?v=202611091509';
-import { creaGps } from './gps.js?v=202611091509';
-import { decodificaTerreno, puntoLibero } from './terreno.js?v=202611091509';
-import { creaTaratura } from './taratura.js?v=202611091509';
-import { componi, salva } from './foto.js?v=202611091509';
-import { deg, VERSIONE } from './geo.js?v=202611091509';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202611091528';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202611091528';
+import { creaControlli } from './controlli.js?v=202611091528';
+import { creaHud } from './hud.js?v=202611091528';
+import { creaTouch } from './touch.js?v=202611091528';
+import { creaFotocamera } from './fotocamera.js?v=202611091528';
+import { creaGps } from './gps.js?v=202611091528';
+import { decodificaTerreno, puntoLibero } from './terreno.js?v=202611091528';
+import { creaTaratura } from './taratura.js?v=202611091528';
+import { componi, salva, copia, nomeBase } from './foto.js?v=202611091528';
+import { deg, VERSIONE } from './geo.js?v=202611091528';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -19,7 +19,9 @@ const QUEST = /OculusBrowser|Quest/i.test(navigator.userAgent);
 const MOBILE = !QUEST && (matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad/i.test(navigator.userAgent));
 
 let prog = null, mondoAttivo = null, inizializzato = false, etichetteOn = true, fantasmiOn = false;
-let pulito = false, fotoRichiesta = false;    // vista solo turbine; scatto al prossimo fotogramma
+let pulito = false, fotoRichiesta = false;
+let livelli = true;                         // salva anche foto, turbine, etichette separate
+try { livelli = localStorage.getItem('zefiroAR.livelli') !== '0'; } catch { /* */ }    // vista solo turbine; scatto al prossimo fotogramma
 let modoTouch = false;                       // HUD e comandi a schermo (telefono)
 let tracciato = false, diag = '';            // stato del tracciamento e riga diagnostica
 let avviso = null;                           // messaggio temporaneo nella fascia gialla
@@ -55,6 +57,12 @@ const azioni = {
     return pulito;
   },
   scatta() { fotoRichiesta = true; },
+  livelli() {
+    livelli = !livelli;
+    try { localStorage.setItem('zefiroAR.livelli', livelli ? '1' : '0'); } catch { /* */ }
+    avviso = { testo: livelli ? 'Scatto: composito + 3 livelli' : 'Scatto: solo composito', fino: performance.now() + 2000 };
+    return livelli;
+  },
   fantasmi() {
     fantasmiOn = !fantasmiOn;
     mondoAttivo?.fantasmi.forEach(f => f.visible = fantasmiOn);
@@ -264,6 +272,43 @@ $('entra').addEventListener('click', async () => {
   }
 });
 
+// ---------- scatto: composito ed eventuali livelli separati, tutti nello stesso fotogramma
+function scatto() {
+  const d = new Date(), M = mondoAttivo, tela = renderer.domElement;
+  const video = stato.sensori ? $('video') : null;
+  const nome = nomeBase(M.punto.id);
+  const composito = componi(video, tela,
+    `${prog?.nome ?? 'Zefiro AR'} · ${M.punto.id} ${M.punto.etichetta ?? ''} · direzione ${ctrl.azTesta().toFixed(1)}°N · ` +
+    `${d.toLocaleDateString('it-IT')} ${d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}\n` +
+    'Simulazione indicativa in realtà aumentata – Elaborazione: Zefiro (Poliedra) — ing. Diego De Benedittis');
+  const file = [[composito, nome + '_composito', false]];
+  if (livelli) {
+    // visibilità attuali, da ripristinare
+    const tutti = [...M.gruppi, ...M.fantasmi, ...M.etichette, ...M.aiuti, ...camera.children];
+    const vis = tutti.map(o => o.visible);
+    const nascondi = l => l.forEach(o => o.visible = false);
+    // turbine (senza etichette, aiuti, freccia, HUD)
+    nascondi(M.etichette); nascondi(M.aiuti); nascondi(camera.children); M.segna(null);
+    renderer.render(scene, camera);
+    const cTurb = copia(tela);
+    // etichette (solo nomi turbine)
+    nascondi(M.gruppi); nascondi(M.fantasmi);
+    M.etichette.forEach(o => o.visible = true);
+    renderer.render(scene, camera);
+    const cEt = copia(tela);
+    tutti.forEach((o, i) => o.visible = vis[i]);
+    renderer.render(scene, camera);
+    if (video) file.push([componi(video, document.createElement('canvas'), null, tela.width, tela.height), nome + '_foto', false]);
+    file.push([cTurb, nome + '_turbine', true], [cEt, nome + '_etichette', true]);
+  }
+  $('tFlash').classList.add('on');
+  setTimeout(() => $('tFlash').classList.remove('on'), 60);
+  (async () => {
+    for (const [c, n, png] of file) { await salva(c, n, png); await new Promise(r => setTimeout(r, 400)); }
+    avviso = { testo: `Salvati ${file.length} file: ${nome}`, fino: performance.now() + 3000 };
+  })();
+}
+
 // ---------- ciclo
 function guida(b) {
   if (tar.attiva) return tar.guida();
@@ -329,13 +374,6 @@ renderer.setAnimationLoop((t, frame) => {
   renderer.render(scene, camera);
   if (fotoRichiesta && mondoAttivo) {              // subito dopo il render: buffer WebGL ancora valido
     fotoRichiesta = false;
-    const d = new Date();
-    const tela = componi(stato.sensori ? $('video') : null, renderer.domElement,
-      `${prog?.nome ?? 'Zefiro AR'} · ${mondoAttivo.punto.id} ${mondoAttivo.punto.etichetta ?? ''} · direzione ${ctrl.azTesta().toFixed(1)}°N · ` +
-      `${d.toLocaleDateString('it-IT')} ${d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}\n` +
-      'Simulazione indicativa in realtà aumentata – Elaborazione: Zefiro (Poliedra) — ing. Diego De Benedittis');
-    $('tFlash').classList.add('on');
-    setTimeout(() => $('tFlash').classList.remove('on'), 60);
-    salva(tela, mondoAttivo.punto.id).then(n => { avviso = { testo: `Foto salvata: ${n}`, fino: performance.now() + 2500 }; });
+    scatto();
   }
 });

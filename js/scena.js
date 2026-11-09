@@ -1,8 +1,8 @@
 // Zefiro AR – renderer, mondo, turbine, skyline DTM, riferimenti
 import * as THREE from 'three';
-import { distanzaScena, dirDaAz, rad, deg, H_OCCHIO } from './geo.js?v=202611091509';
-import { creaTurbina } from './turbina.js?v=202611091509';
-import { etichetta, simbolo } from './hud.js?v=202611091509';
+import { distanzaScena, dirDaAz, rad, deg, H_OCCHIO } from './geo.js?v=202611091528';
+import { creaTurbina } from './turbina.js?v=202611091528';
+import { etichetta, simbolo } from './hud.js?v=202611091528';
 
 const R_SKY = 470;   // raggio della skyline e dei marker (solo direzione)
 
@@ -64,7 +64,7 @@ function svuota(g) {
 
 export function popolaMondo(mondo, punto, turbine) {
   svuota(mondo);
-  const rotori = [], fantasmi = [], etichette = [], aiuti = [], bersagli = [], piani = [];  // aiuti: skyline, tacche, cardinali, riferimenti
+  const gruppi = [], rotori = [], fantasmi = [], etichette = [], aiuti = [], bersagli = [], piani = [];  // aiuti: skyline, tacche, cardinali, riferimenti
 
   for (const t of turbine) {
     const dS = distanzaScena(t.dist), s = dS / t.dist;
@@ -85,7 +85,7 @@ export function popolaMondo(mondo, punto, turbine) {
       gruppo.scale.setScalar(s);
       gruppo.position.set(dx * dS, yBase, dz * dS);
       gruppo.rotation.y = -rad(t.az);           // rotore rivolto all'osservatore
-      mondo.add(gruppo); rotori.push(rotore);
+      mondo.add(gruppo); rotori.push(rotore); gruppi.push(gruppo);
       if (lista) { gruppo.visible = false; lista.push(gruppo); }
     }
     const e = etichetta(t.id, new THREE.Vector3(dx * dS, yBase + s * t.h * 1.04, dz * dS));
@@ -132,7 +132,7 @@ export function popolaMondo(mondo, punto, turbine) {
     freccia.visible = !!b;
     if (b) freccia.position.copy(puntoSky(b.az, (b.el ?? 0) + 0.5));
   };
-  return { rotori, fantasmi, etichette, aiuti, bersagli, piani, segna };
+  return { gruppi, rotori, fantasmi, etichette, aiuti, bersagli, piani, segna };
 }
 
 // La scena segue la testa: l'occhio del mondo (0, H_OCCHIO, 0) coincide con la camera.

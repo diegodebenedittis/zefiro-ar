@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Zefiro AR</title>
-<link rel="stylesheet" href="css/stile.css?v=202611091509">
+<link rel="stylesheet" href="css/stile.css?v=202611091528">
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
 </script>
@@ -60,7 +60,7 @@
       <li><b>📍 Posizione attuale</b> (menu Punto di vista): usa il GPS; quota, skyline e parti nascoste calcolate sul posto</li>
       <li><b>◀ ▶</b>: tocco = 0,1°; tenuti premuti ruotano sempre più veloci · <b>Allinea</b>: il bersaglio ▼ va al centro del mirino</li>
       <li><b>▲ ▼</b> (a destra): alzano/abbassano la scena per correggere l'inclinazione del sensore; tocco = 0,05°, tenuti premuti ripetono. La taratura a 2 punti la imposta da sola; valore salvato sul telefono · Azzera ▲▼ nel menu</li>
-      <li><b>📷</b>: scatta una foto (fotocamera + turbine + etichette, con didascalia di punto, direzione e data); viene salvata in Download</li>
+      <li><b>📷</b>: scatta una foto (fotocamera + turbine + etichette, con didascalia di punto, direzione e data) in Download. Con <b>Livelli 📷</b> attivo (menu) salva anche i livelli separati: _foto.jpg, _turbine.png e _etichette.png trasparenti, stesse dimensioni, da sovrapporre. Al primo scatto Chrome può chiedere di consentire download multipli</li>
       <li><b>Solo turbine</b> (menu ☰): nasconde skyline, tacche, riferimenti, mirino e scritte; restano le turbine di progetto con le etichette. Ottimo per mostrare l'impianto o per la foto. Si esce dallo stesso pulsante</li>
       <li><b>☰</b>: Bersaglio (cambia ▼), <b>Taratura 2 punti</b>, Bussola, Campo −/+, Etichette, Nascoste, Esci</li>
       <li><b>Taratura 2 punti</b>: l'immagine si ferma; tocca il bersaglio reale A (azzurro) e poi B (verde), lontani fra loro ≥ 10° · Applica: campo visivo e orientamento insieme</li>
@@ -104,6 +104,7 @@
         <button id="tFantasmi">Nascoste</button>
         <button id="tAzzeraAlzo" class="solo-cam">Azzera ▲▼</button>
         <button id="tPulito">Solo turbine</button>
+        <button id="tLivelli" class="solo-cam on">Livelli 📷</button>
         <button id="tEsci">Esci</button>
       </div>
       <div id="tDiag"></div>
@@ -124,6 +125,6 @@
   </div>
   </div>
 </div>
-<script type="module" src="js/main.js?v=202611091509"></script>
+<script type="module" src="js/main.js?v=202611091528"></script>
 </body>
 </html>
