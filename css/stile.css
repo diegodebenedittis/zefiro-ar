@@ -81,3 +81,8 @@ body.taratura #tMirino { display:none; }
 #touch #tScatta { flex:0.7; font-size:20px; }
 /* vista pulita: solo turbine ed etichette */
 body.pulito #tMirino, body.pulito #tAlto, body.pulito #tVert { display:none !important; }
+/* Drive nel pannello iniziale */
+.riga-drive { display:flex; gap:8px; align-items:center; }
+.riga-drive select { flex:1; min-width:0; }
+.riga-drive button { width:auto; margin:0; padding:.5em .9em; background:#2c343c; color:var(--fg); font-weight:600; border:1px solid #3a444e; }
+#pannello details button.secondario { background:#2c343c; color:var(--fg); }

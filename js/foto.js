@@ -49,6 +49,6 @@ export function salva(canvas, nome, png = false) {
     a.href = url; a.download = nome + (png ? '.png' : '.jpg');
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
-    ok(a.download);
+    ok({ nome: a.download, blob });
   }, png ? 'image/png' : 'image/jpeg', 0.92));
 }

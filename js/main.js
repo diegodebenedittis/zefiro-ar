@@ -1,15 +1,16 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202611091528';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202611091528';
-import { creaControlli } from './controlli.js?v=202611091528';
-import { creaHud } from './hud.js?v=202611091528';
-import { creaTouch } from './touch.js?v=202611091528';
-import { creaFotocamera } from './fotocamera.js?v=202611091528';
-import { creaGps } from './gps.js?v=202611091528';
-import { decodificaTerreno, puntoLibero } from './terreno.js?v=202611091528';
-import { creaTaratura } from './taratura.js?v=202611091528';
-import { componi, salva, copia, nomeBase } from './foto.js?v=202611091528';
-import { deg, VERSIONE } from './geo.js?v=202611091528';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202611091936';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202611091936';
+import { creaControlli } from './controlli.js?v=202611091936';
+import { creaHud } from './hud.js?v=202611091936';
+import { creaTouch } from './touch.js?v=202611091936';
+import { creaFotocamera } from './fotocamera.js?v=202611091936';
+import { creaGps } from './gps.js?v=202611091936';
+import { decodificaTerreno, puntoLibero } from './terreno.js?v=202611091936';
+import { creaTaratura } from './taratura.js?v=202611091936';
+import { componi, salva, copia, nomeBase } from './foto.js?v=202611091936';
+import * as drive from './drive.js?v=202611091936';
+import { deg, VERSIONE } from './geo.js?v=202611091936';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -68,6 +69,7 @@ const azioni = {
     mondoAttivo?.fantasmi.forEach(f => f.visible = fantasmiOn);
     return fantasmiOn;
   },
+  mirino() { cam.ferma?.(); location.href = urlMirino(); },
   esci() {
     const s = renderer.xr.getSession();
     if (s) s.end(); else { cam.ferma(); location.reload(); }
@@ -128,8 +130,13 @@ const declinazione = () => +(prog?.declinazione ?? 0) || 0;
 // ---------- dati
 $('file').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
-  try {
-    prog = leggiProgetto(JSON.parse(await f.text()));
+  try { await usaDati(JSON.parse(await f.text())); }
+  catch (err) { $('infoDati').textContent = 'Errore: ' + err.message; }
+});
+async function usaDati(json) {
+  {
+    prog = leggiProgetto(json);
+    drive.impostaProgetto(json.progetto || '');
     terreno = null;
     if (prog.terrenoGrezzo) {
       try { terreno = await decodificaTerreno(prog.terrenoGrezzo); }
@@ -141,8 +148,62 @@ $('file').addEventListener('change', async e => {
     sel.value = prog.punti.length ? '0' : 'gps';
     sel.disabled = false; $('usaDemo').checked = false;
     aggiornaInfo();
-  } catch (err) { $('infoDati').textContent = 'Errore: ' + err.message; }
+  }
+}
+
+// ---------- Google Drive (configurazione condivisa con il Mirino)
+function statoDrive() { $('statoDrive').textContent = drive.stato(); }
+drive.suStato(statoDrive);
+async function elencoDrive() {
+  const sel = $('selProg');
+  if (!drive.configurato()) { sel.innerHTML = '<option value="">(Drive non configurato)</option>'; return; }
+  sel.innerHTML = '<option value="">Caricamento elenco…</option>';
+  try {
+    const lista = await drive.elencoProgetti();
+    sel.innerHTML = lista.length ? '' : '<option value="">(nessun progetto sul Drive)</option>';
+    lista.forEach(p => sel.add(new Option(p.nome + (p.aggiornato ? '  ·  ' + p.aggiornato : ''), p.nome)));
+  } catch (e) { sel.innerHTML = `<option value="">Drive: ${e.message}</option>`; }
+}
+$('cloudUrl').value = drive.config().url; $('cloudChiave').value = drive.config().chiave;
+$('cloudProva').addEventListener('click', async () => {
+  drive.salvaConfig($('cloudUrl').value, $('cloudChiave').value);
+  $('statoDrive').textContent = 'Prova in corso…';
+  try { const l = await drive.prova(); $('statoDrive').textContent = `Collegato: ${l.length} progetti sul Drive`; elencoDrive(); drive.inviaCoda(); }
+  catch (e) { $('statoDrive').textContent = 'Collegamento non riuscito: ' + e.message; }
 });
+$('btnCaricaProg').addEventListener('click', async () => {
+  const nome = $('selProg').value; if (!nome) return;
+  $('infoDati').textContent = 'Scarico ' + nome + '…';
+  try { await usaDati(await drive.scaricaProgetto(nome)); }
+  catch (e) { $('infoDati').textContent = 'Impossibile caricare il progetto: ' + e.message; }
+});
+elencoDrive(); statoDrive();
+
+// ---------- apertura dal Mirino: ?da=mirino&punto=<id>[&progetto=<nome>]
+// Il Mirino sta sullo stesso sito: i suoi dati correnti sono in localStorage ('mirino_dati').
+// Se mancano il terreno (punti GPS) e il Drive è collegato, si scarica la versione completa.
+async function apriDaMirino() {
+  const q = new URLSearchParams(location.search);
+  if (q.get('da') !== 'mirino') return;
+  $('tornaMirino').hidden = false;
+  let dati = null;
+  try { dati = JSON.parse(localStorage.getItem('mirino_dati') || 'null'); } catch { /* */ }
+  const nomeProg = q.get('progetto') || dati?.progetto;
+  if ((!dati || !dati.terreno) && nomeProg && drive.configurato()) {
+    $('infoDati').textContent = 'Scarico ' + nomeProg + ' dal Drive…';
+    try { dati = await drive.scaricaProgetto(nomeProg); } catch { /* resta quello del Mirino */ }
+  }
+  if (!dati) { $('infoDati').textContent = 'Nessun progetto aperto nel Mirino: caricalo qui.'; return; }
+  await usaDati(dati);
+  const pid = q.get('punto'), i = prog.punti.findIndex(p => String(p.id) === pid);
+  $('punto').value = pid === 'gps' ? 'gps' : String(i >= 0 ? i : 0);
+  aggiornaInfo();
+  $('stato').textContent = `Dal Mirino: ${pid ?? ''}. Rivolgiti verso il parco e premi ` +
+    (MOBILE ? '«Modalità fotocamera».' : '«Entra in AR».');
+}
+apriDaMirino();
+const urlMirino = () => location.href.replace(/zefiro-ar\/.*$/, 'mirino/');
+$('tornaMirino').addEventListener('click', () => { location.href = urlMirino(); });
 $('punto').addEventListener('change', aggiornaInfo);
 function aggiornaInfo() {
   if (!prog) return;
@@ -304,8 +365,14 @@ function scatto() {
   $('tFlash').classList.add('on');
   setTimeout(() => $('tFlash').classList.remove('on'), 60);
   (async () => {
-    for (const [c, n, png] of file) { await salva(c, n, png); await new Promise(r => setTimeout(r, 400)); }
-    avviso = { testo: `Salvati ${file.length} file: ${nome}`, fino: performance.now() + 3000 };
+    const info = { punto: M.punto.id, lat: M.punto.lat, lon: M.punto.lon, id: nome };
+    let suDrive = false;
+    for (const [c, n, png] of file) {
+      const { blob, nome: nf } = await salva(c, n, png);
+      suDrive = (await drive.accoda(blob, nf, info).catch(() => false)) || suDrive;
+      await new Promise(r => setTimeout(r, 400));
+    }
+    avviso = { testo: `Salvati ${file.length} file` + (suDrive ? ' · invio al Drive' : ''), fino: performance.now() + 3000 };
   })();
 }
 
@@ -367,7 +434,7 @@ renderer.setAnimationLoop((t, frame) => {
         `${mondoAttivo.punto.id} · ${ctrl.azTesta().toFixed(1)}°N` + (b ? ` · ▼ ${b.nome} Δ ${sc.toFixed(2)}°` : '') +
           (stato.sensori && cam.alzo ? ` · ▲▼ ${cam.alzo > 0 ? '+' : ''}${cam.alzo.toFixed(2)}°` : ''),
         righe[0],
-        [righe[1], righe[2], righe[4]].join('\n'),
+        [righe[1], righe[2], righe[4], drive.stato()].join('\n'),
         tar.attiva ? tar.esito() : '');
     } else hud.imposta(righe);
   }
