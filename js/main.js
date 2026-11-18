@@ -1,16 +1,17 @@
 // Zefiro AR – avvio, interfaccia, ciclo di rendering (Meta Quest 3 e telefono Android)
-import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202611092110';
-import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202611092110';
-import { creaControlli } from './controlli.js?v=202611092110';
-import { creaHud } from './hud.js?v=202611092110';
-import { creaTouch } from './touch.js?v=202611092110';
-import { creaFotocamera } from './fotocamera.js?v=202611092110';
-import { creaGps } from './gps.js?v=202611092110';
-import { decodificaTerreno, puntoLibero } from './terreno.js?v=202611092110';
-import { creaTaratura } from './taratura.js?v=202611092110';
-import { componi, salva, copia, nomeBase, ruota, didascalia } from './foto.js?v=202611092110';
-import * as drive from './drive.js?v=202611092110';
-import { deg, VERSIONE } from './geo.js?v=202611092110';
+import { leggiProgetto, turbinePerPunto, infoPunto, datiDemo } from './dati.js?v=202611180844';
+import { creaScena, popolaMondo, seguiTesta } from './scena.js?v=202611180844';
+import { creaControlli } from './controlli.js?v=202611180844';
+import { creaHud } from './hud.js?v=202611180844';
+import { creaTouch } from './touch.js?v=202611180844';
+import { creaFotocamera } from './fotocamera.js?v=202611180844';
+import { creaGps } from './gps.js?v=202611180844';
+import { decodificaTerreno, puntoLibero } from './terreno.js?v=202611180844';
+import { creaTaratura } from './taratura.js?v=202611180844';
+import { componi, salva, copia, nomeBase, ruota, didascalia } from './foto.js?v=202611180844';
+import * as drive from './drive.js?v=202611180844';
+import { deg, VERSIONE } from './geo.js?v=202611180844';
+import { datiParcoDemo, demoRichiesta, NOME_DEMO } from './demo.js?v=202611180844';
 
 const $ = id => document.getElementById(id);
 const { renderer, scene, camera, mondo } = creaScena(document.body);
@@ -19,6 +20,7 @@ renderer.domElement.style.display = 'none';
 const QUEST = /OculusBrowser|Quest/i.test(navigator.userAgent);
 const MOBILE = !QUEST && (matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad/i.test(navigator.userAgent));
 
+let demo = demoRichiesta();                  // parco virtuale (?demo=1 o pulsante)
 let prog = null, mondoAttivo = null, inizializzato = false, etichetteOn = true, fantasmiOn = false;
 let pulito = false, fotoRichiesta = false;
 let livelli = true;                         // salva anche foto, turbine, etichette separate
@@ -136,6 +138,7 @@ $('file').addEventListener('change', async e => {
 async function usaDati(json) {
   {
     prog = leggiProgetto(json);
+    demo = false; $('secDemo').classList.remove('attiva');
     drive.impostaProgetto(json.progetto || '');
     terreno = null;
     if (prog.terrenoGrezzo) {
@@ -223,6 +226,7 @@ function aggiornaInfo() {
 }
 
 function selezione() {
+  if (demo) return datiParcoDemo(0);
   if ($('usaDemo').checked || !prog) {
     const v = k => +$(k).value;
     return datiDemo({ dist: v('dDist'), az: v('dAz'), h: v('dH'), hub: v('dHub'), D: v('dD'), dz: v('dDz') });
@@ -261,6 +265,20 @@ if (MOBILE) {
 }
 $('versione').textContent = 'versione ' + VERSIONE;
 $('guidaTelefono').hidden = !MOBILE;
+
+// ---------- demo: con ?demo=1 la pagina mostra solo la demo; il pulsante la avvia subito
+function mostraDemo() {
+  $('secDemo').classList.toggle('attiva', demo);
+  document.body.classList.toggle('visitatore', demoRichiesta() && demo);
+  if (demo) $('stato').textContent = MOBILE
+    ? 'Demo: all\'aperto o davanti a una finestra, telefono all\'altezza degli occhi.'
+    : 'Demo: anteprima sul computer; per la realtà aumentata apri questa pagina dal telefono.';
+}
+$('btnDemo').addEventListener('click', () => {
+  demo = true; mostraDemo();
+  $(MOBILE ? 'entraCam' : 'entra').click();
+});
+mostraDemo();
 
 // ---------- avvio sessione
 async function avviaAR() {
@@ -340,7 +358,7 @@ function scatto() {
   const nome = nomeBase(M.punto.id);
   const ang = modoTouch ? touch.angolo : 0;               // telefono in orizzontale: foto in orizzontale
   const composito = didascalia(ruota(componi(video, tela, null), ang),
-    `${prog?.nome ?? 'Zefiro AR'} · ${M.punto.id} ${M.punto.etichetta ?? ''} · direzione ${ctrl.azTesta().toFixed(1)}°N · ` +
+    `${M.punto.demo ? NOME_DEMO : (prog?.nome ?? 'Zefiro AR')} · ${M.punto.id} ${M.punto.etichetta ?? ''} · direzione ${ctrl.azTesta().toFixed(1)}°N · ` +
     `${d.toLocaleDateString('it-IT')} ${d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}\n` +
     'Simulazione indicativa in realtà aumentata – Elaborazione: Zefiro (Poliedra) — ing. Diego De Benedittis');
   const file = [[composito, nome + '_composito', false]];
@@ -409,7 +427,10 @@ renderer.setAnimationLoop((t, frame) => {
     if (!inizializzato && tracciato) {
       // telefono: bussola se risponde entro ~1,5 s, altrimenti baricentro davanti a sé
       tBussola += dt;
-      if (stato.sensori && cam.bussola != null) { azioni.bussola(); inizializzato = true; }
+      if (mondoAttivo.punto.demo) {              // demo: parco sempre davanti, bussola non necessaria
+        ctrl.allineaAz(mondoAttivo.azIniziale); inizializzato = true;
+        avviso = { testo: 'Demo: 6 turbine virtuali alte 200 m, a 0,7–1,6 km davanti a te', fino: performance.now() + 4500 };
+      } else if (stato.sensori && cam.bussola != null) { azioni.bussola(); inizializzato = true; }
       else if (!stato.sensori || tBussola > 1.5) {
         ctrl.allineaAz(mondoAttivo.azIniziale); inizializzato = true;
         if (stato.sensori) avviso = { testo: 'Bussola assente: parco davanti a te, allinea a mano', fino: performance.now() + 3000 };
