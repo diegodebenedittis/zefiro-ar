@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Zefiro AR</title>
-<link rel="stylesheet" href="css/stile.css?v=202611092110">
+<link rel="stylesheet" href="css/stile.css?v=202611180844">
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
 </script>
@@ -14,6 +14,14 @@
   <h1>Zefiro AR</h1>
   <button id="tornaMirino" class="secondario" hidden>← Torna al Mirino</button>
   <p id="versione" class="nota"></p>
+
+  <section id="secDemo">
+    <p class="intro">Aerogeneratori di progetto in realtà aumentata, a grandezza reale, dal punto di vista.
+      Il layout arriva dal plugin QGIS <b>Zefiro</b>.</p>
+    <button id="btnDemo" type="button">▶ Avvia la demo</button>
+    <p class="nota">Demo: 6 turbine virtuali (mozzo 119 m, rotore 162 m) davanti a te, ovunque ti trovi.
+      Nessun dato da caricare. Telefono Android o iPhone, meglio all'aperto.</p>
+  </section>
 
   <section>
     <h2>1 · Dati di sopralluogo</h2>
@@ -80,6 +88,8 @@
       <li>Entra in AR (WebXR): solo Chrome per Android con ARCore, non su tutti i modelli</li>
     </ul>
   </details>
+  <footer class="nota">© 2026 ing. Diego De Benedittis — Zefiro AR / Zefiro (Poliedra). Tutti i diritti riservati.
+    Vuoi provarlo su un tuo progetto? <a href="https://www.linkedin.com/in/ing-ddb/" target="_blank" rel="noopener">Scrivimi su LinkedIn</a>.</footer>
 </main>
 
 <video id="video" playsinline muted autoplay hidden></video>
@@ -139,6 +149,6 @@
   </div>
   </div>
 </div>
-<script type="module" src="js/main.js?v=202611092110"></script>
+<script type="module" src="js/main.js?v=202611180844"></script>
 </body>
 </html>
